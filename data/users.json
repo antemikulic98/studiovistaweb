@@ -1,0 +1,18 @@
+[
+  {
+    "email": "ante@studiovista.hr",
+    "password": "$2b$12$P2QgtkExgjaszyXfLVu1WOvX7tpPL3nZKZfEUF9vDIqfCCo1j.jtm",
+    "name": "Ante",
+    "role": "admin",
+    "createdAt": "2025-09-04T13:39:52.526Z",
+    "id": "0l8kltise"
+  },
+  {
+    "email": "boris@studiovista.hr",
+    "password": "$2b$12$PxdUchmwLjT/3Z.9kfcOY.Awc9ZnG1nWHqXUl6fBFCBO6Vm4DrNUK",
+    "name": "Boris",
+    "role": "admin",
+    "createdAt": "2025-09-04T13:39:52.526Z",
+    "id": "xrc6yqrgg"
+  }
+]
