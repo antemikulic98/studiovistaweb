@@ -2196,6 +2196,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/canvas-confetti@npm:^1.9.0":
+  version: 1.9.0
+  resolution: "@types/canvas-confetti@npm:1.9.0"
+  checksum: 56227a362cead21ab76b0870e07e0cc2d26c800f5bc0fc109e4a3eca1a4d4dd317e1292163246d389827b7f30ce9e6eca3915681f3c80ed1e46491018f48a266
+  languageName: node
+  linkType: hard
+
 "@types/connect@npm:*":
   version: 3.4.38
   resolution: "@types/connect@npm:3.4.38"
@@ -3161,6 +3168,13 @@ __metadata:
   version: 1.0.30001737
   resolution: "caniuse-lite@npm:1.0.30001737"
   checksum: 347ad0dccd76d04d86163fdd59ec89894660cced949252ff05c65aea4a35ffeba5814a60733c0b44ee1b56c083ae9aba4ab715b783ab72b69d8a653ef3ab6c9e
+  languageName: node
+  linkType: hard
+
+"canvas-confetti@npm:^1.9.3":
+  version: 1.9.3
+  resolution: "canvas-confetti@npm:1.9.3"
+  checksum: db044a9c9ca0e58eafd115f7dfc2f9ecc377be34d8a5dd75901dae0dafd4fb0b75fbbf8edd48bbefad2468653c5838348f0e768b79727a924259a9ada343ea30
   languageName: node
   linkType: hard
 
@@ -6574,6 +6588,7 @@ __metadata:
     "@react-three/fiber": ^9.3.0
     "@tailwindcss/postcss": ^4
     "@types/bcrypt": ^6.0.0
+    "@types/canvas-confetti": ^1.9.0
     "@types/jsonwebtoken": ^9.0.10
     "@types/multer": ^2.0.0
     "@types/node": ^20
@@ -6581,6 +6596,7 @@ __metadata:
     "@types/react-dom": ^19
     "@types/three": ^0.179.0
     bcrypt: ^6.0.0
+    canvas-confetti: ^1.9.3
     dotenv: ^17.2.2
     eslint: ^9
     eslint-config-next: 15.5.0
