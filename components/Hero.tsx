@@ -2,21 +2,10 @@
 
 import Image from 'next/image';
 import { Sparkles, Palette, ChevronRight, Eye, Truck } from 'lucide-react';
+import { Translations } from '../types/translations';
 
 interface HeroProps {
-  translations: {
-    hero: {
-      badge: string;
-      title: string;
-      subtitle: string;
-      cta: string;
-      features: {
-        premium: string;
-        fast: string;
-        support: string;
-      };
-    };
-  };
+  translations: Translations;
   openModal: () => void;
 }
 
@@ -75,19 +64,19 @@ export default function Hero({ translations: t, openModal }: HeroProps) {
               <div>
                 <div className='text-3xl font-bold text-gray-900'>50K+</div>
                 <div className='text-sm text-gray-600'>
-                  {t.hero.stats.customers}
+                  {t.hero.stats?.customers}
                 </div>
               </div>
               <div>
                 <div className='text-3xl font-bold text-gray-900'>4.9/5</div>
                 <div className='text-sm text-gray-600'>
-                  {t.hero.stats.rating}
+                  {t.hero.stats?.rating}
                 </div>
               </div>
               <div>
                 <div className='text-3xl font-bold text-gray-900'>100%</div>
                 <div className='text-sm text-gray-600'>
-                  {t.hero.stats.satisfaction}
+                  {t.hero.stats?.satisfaction}
                 </div>
               </div>
             </div>
@@ -113,10 +102,10 @@ export default function Hero({ translations: t, openModal }: HeroProps) {
                 </div>
                 <div>
                   <div className='font-semibold text-gray-900'>
-                    {t.hero.floating.shipping}
+                    {t.hero.floating?.shipping}
                   </div>
                   <div className='text-sm text-gray-600'>
-                    {t.hero.floating.shippingDesc}
+                    {t.hero.floating?.shippingDesc}
                   </div>
                 </div>
               </div>
@@ -129,10 +118,10 @@ export default function Hero({ translations: t, openModal }: HeroProps) {
                 </div>
                 <div>
                   <div className='font-semibold text-gray-900'>
-                    {t.hero.floating.framing}
+                    {t.hero.floating?.framing}
                   </div>
                   <div className='text-sm text-gray-600'>
-                    {t.hero.floating.framingDesc}
+                    {t.hero.floating?.framingDesc}
                   </div>
                 </div>
               </div>

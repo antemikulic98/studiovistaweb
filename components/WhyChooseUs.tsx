@@ -1,34 +1,8 @@
 import Image from 'next/image';
+import { Translations } from '../types/translations';
 
 interface WhyChooseUsProps {
-  t: {
-    whyChooseUs: {
-      badge: string;
-      title: string;
-      subtitle: string;
-      features: {
-        quality: {
-          title: string;
-          description: string;
-        };
-        speed: {
-          title: string;
-          description: string;
-        };
-        support: {
-          title: string;
-          description: string;
-        };
-      };
-      stats: {
-        experience: string;
-        customers: string;
-        satisfaction: string;
-        awards: string;
-        award: string;
-      };
-    };
-  };
+  t: Translations;
 }
 
 export default function WhyChooseUs({ t }: WhyChooseUsProps) {
@@ -61,10 +35,10 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
                 </div>
                 <div>
                   <h3 className='text-xl font-bold text-gray-900 mb-2'>
-                    {t.quality.turnaround.title}
+                    Brza dostava
                   </h3>
                   <p className='text-gray-600'>
-                    {t.quality.turnaround.description}
+                    Brza obrada i isporuka unutar 3-5 radnih dana
                   </p>
                 </div>
               </div>
@@ -92,9 +66,11 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
                 </div>
                 <div>
                   <h3 className='text-xl font-bold text-gray-900 mb-2'>
-                    {t.quality.title}
+                    Vrhunska kvaliteta
                   </h3>
-                  <p className='text-gray-600'>{t.quality.description}</p>
+                  <p className='text-gray-600'>
+                    Premium materijali i precizna izrada
+                  </p>
                 </div>
               </div>
             </div>
@@ -122,7 +98,7 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
                   <div>
                     <div className='font-bold text-gray-900'>99.8%</div>
                     <div className='text-sm text-gray-600'>
-                      {t.quality.satisfaction}
+                      Zadovoljstvo kupaca
                     </div>
                   </div>
                 </div>

@@ -1,24 +1,7 @@
+import { Translations } from '../types/translations';
+
 interface FooterProps {
-  t: {
-    footer: {
-      tagline: string;
-      products: {
-        title: string;
-        canvas: string;
-        stickers: string;
-      };
-      contact: {
-        title: string;
-        businessHours: string;
-        support: string;
-      };
-      copyright: string;
-      legal: {
-        privacy: string;
-        terms: string;
-      };
-    };
-  };
+  t: Translations;
 }
 
 export default function Footer({ t }: FooterProps) {

@@ -2,6 +2,13 @@
 
 import { useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
+
+// Extend Window interface for temporary file storage
+declare global {
+  interface Window {
+    selectedImageFile?: File;
+  }
+}
 import Header from '../components/Header';
 import Hero from '../components/Hero';
 import ProductModal from '../components/ProductModal';
@@ -370,8 +377,6 @@ export default function Home() {
   const [language, setLanguage] = useState<'hr' | 'en'>('hr');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedPrintType, setSelectedPrintType] = useState<
@@ -386,7 +391,8 @@ export default function Home() {
   >('customize');
   const [completedOrderId, setCompletedOrderId] = useState<string>('');
   const [orderData, setOrderData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     address: '',
@@ -473,7 +479,7 @@ export default function Home() {
       reader.readAsDataURL(file);
 
       // Store file for later upload to DigitalOcean Spaces when order is completed
-      (window as any).selectedImageFile = file;
+      window.selectedImageFile = file;
     } catch (error) {
       console.error('Upload error:', error);
       setUploadError(
@@ -495,8 +501,6 @@ export default function Home() {
   const closeModal = () => {
     setIsModalOpen(false);
     setUploadedImage(null);
-    setUploadedImageUrl(null);
-    setUploadProgress(0);
     setIsUploading(false);
     setUploadError(null);
     setSelectedSize('30x20'); // Reset to default size
@@ -504,13 +508,14 @@ export default function Home() {
     setModalStep('customize'); // Reset to first step
     setCompletedOrderId(''); // Reset order ID
     setOrderData({
-      name: '',
+      firstName: '',
+      lastName: '',
       email: '',
       phone: '',
       address: '',
       city: '',
       postalCode: '',
-      paymentMethod: 'card',
+      paymentMethod: 'card' as 'card' | 'paypal' | 'bank',
     });
 
     // Clear file input and temp file storage
@@ -519,7 +524,7 @@ export default function Home() {
     }
 
     // Clean up temporary file reference
-    delete (window as any).selectedImageFile;
+    delete window.selectedImageFile;
   };
 
   const handleContinueOrder = () => {
@@ -530,10 +535,6 @@ export default function Home() {
 
   const handleBackToCustomize = () => {
     setModalStep('customize');
-  };
-
-  const handleOrderDataChange = (field: string, value: string) => {
-    setOrderData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleCompleteOrder = async () => {
@@ -559,8 +560,8 @@ export default function Home() {
       setModalStep('thank-you');
 
       // Clean up the temporary file reference
-      if ((window as any).selectedImageFile) {
-        delete (window as any).selectedImageFile;
+      if (window.selectedImageFile) {
+        delete window.selectedImageFile;
       }
 
       // Trigger confetti celebration
@@ -663,7 +664,6 @@ export default function Home() {
         isUploading={isUploading}
         uploadError={uploadError}
         setUploadedImage={setUploadedImage}
-        setUploadedImageUrl={setUploadedImageUrl}
         setSelectedPrintType={setSelectedPrintType}
         setSelectedSize={setSelectedSize}
         setSelectedFrameColor={setSelectedFrameColor}

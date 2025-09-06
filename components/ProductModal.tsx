@@ -1,11 +1,22 @@
 'use client';
 
+interface OrderData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  paymentMethod: 'card' | 'paypal' | 'bank';
+  specialInstructions?: string;
+}
+
 import Image from 'next/image';
-import { useState, useRef, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Environment } from '@react-three/drei';
 import { TextureLoader } from 'three';
-import confetti from 'canvas-confetti';
 import {
   Upload,
   X,
@@ -466,24 +477,31 @@ interface ProductModalProps {
   selectedPrintType: 'canvas' | 'framed' | 'sticker';
   selectedSize: string;
   selectedFrameColor: 'black' | 'silver';
-  orderData: any;
+  orderData: OrderData;
   completedOrderId: string;
   isUploading: boolean;
   uploadError: string | null;
   setUploadedImage: (image: string | null) => void;
-  setUploadedImageUrl: (url: string | null) => void;
   setSelectedPrintType: (type: 'canvas' | 'framed' | 'sticker') => void;
   setSelectedSize: (size: string) => void;
   setSelectedFrameColor: (color: 'black' | 'silver') => void;
-  setOrderData: (data: any) => void;
+  setOrderData: (data: OrderData) => void;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleContinueOrder: () => void;
   handleBackToCustomize: () => void;
   handleCompleteOrder: () => void;
   getCurrentPrice: () => number;
   getCurrentDimensions: () => { width: number; height: number };
-  fileInputRef: React.RefObject<HTMLInputElement>;
-  sizeOptions: any;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  sizeOptions: {
+    [key: string]: {
+      name: string;
+      canvas: number;
+      framed: number;
+      sticker: number;
+      dimensions: { width: number; height: number };
+    };
+  };
 }
 
 export default function ProductModal({
@@ -499,7 +517,6 @@ export default function ProductModal({
   isUploading,
   uploadError,
   setUploadedImage,
-  setUploadedImageUrl,
   setSelectedPrintType,
   setSelectedSize,
   setSelectedFrameColor,
@@ -513,7 +530,7 @@ export default function ProductModal({
   fileInputRef,
   sizeOptions,
 }: ProductModalProps) {
-  const [language, setLanguage] = useState<'hr' | 'en'>('hr');
+  const [language] = useState<'hr' | 'en'>('hr');
   const t = translations[language];
 
   if (!isModalOpen) return null;
@@ -593,7 +610,6 @@ export default function ProductModal({
                     <button
                       onClick={() => {
                         setUploadedImage(null);
-                        setUploadedImageUrl(null);
                         if (fileInputRef.current) {
                           fileInputRef.current.value = '';
                         }
@@ -658,24 +674,22 @@ export default function ProductModal({
                   Veličina
                 </h4>
                 <div className='grid grid-cols-2 gap-2'>
-                  {Object.entries(sizeOptions).map(
-                    ([key, option]: [string, any]) => (
-                      <button
-                        key={key}
-                        onClick={() => setSelectedSize(key)}
-                        className={`p-3 rounded-xl text-center transition-all duration-200 ${
-                          selectedSize === key
-                            ? 'bg-gray-900 text-white'
-                            : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
-                        }`}
-                      >
-                        <div className='font-medium text-sm'>{option.name}</div>
-                        <div className='text-xs mt-1'>
-                          €{option[selectedPrintType]}
-                        </div>
-                      </button>
-                    )
-                  )}
+                  {Object.entries(sizeOptions).map(([key, option]) => (
+                    <button
+                      key={key}
+                      onClick={() => setSelectedSize(key)}
+                      className={`p-3 rounded-xl text-center transition-all duration-200 ${
+                        selectedSize === key
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-900'
+                      }`}
+                    >
+                      <div className='font-medium text-sm'>{option.name}</div>
+                      <div className='text-xs mt-1'>
+                        €{option[selectedPrintType]}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -828,19 +842,41 @@ export default function ProductModal({
 
                   <div className='space-y-8 bg-gray-50 p-8 rounded-2xl shadow-sm'>
                     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                      <div>
-                        <label className='block text-sm font-semibold text-gray-900 mb-2'>
-                          Ime i prezime *
-                        </label>
-                        <input
-                          type='text'
-                          value={orderData.name}
-                          onChange={(e) =>
-                            setOrderData({ ...orderData, name: e.target.value })
-                          }
-                          className='w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm hover:shadow-md transition-all duration-200 text-gray-900 placeholder-gray-500'
-                          placeholder='Vaše ime i prezime'
-                        />
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                          <label className='block text-sm font-semibold text-gray-900 mb-2'>
+                            Ime *
+                          </label>
+                          <input
+                            type='text'
+                            value={orderData.firstName}
+                            onChange={(e) =>
+                              setOrderData({
+                                ...orderData,
+                                firstName: e.target.value,
+                              })
+                            }
+                            className='w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm hover:shadow-md transition-all duration-200 text-gray-900 placeholder-gray-500'
+                            placeholder='Vaše ime'
+                          />
+                        </div>
+                        <div>
+                          <label className='block text-sm font-semibold text-gray-900 mb-2'>
+                            Prezime *
+                          </label>
+                          <input
+                            type='text'
+                            value={orderData.lastName}
+                            onChange={(e) =>
+                              setOrderData({
+                                ...orderData,
+                                lastName: e.target.value,
+                              })
+                            }
+                            className='w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm hover:shadow-md transition-all duration-200 text-gray-900 placeholder-gray-500'
+                            placeholder='Vaše prezime'
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className='block text-sm font-semibold text-gray-900 mb-2'>
@@ -1146,7 +1182,8 @@ export default function ProductModal({
                   <button
                     onClick={handleCompleteOrder}
                     disabled={
-                      !orderData.name ||
+                      !orderData.firstName ||
+                      !orderData.lastName ||
                       !orderData.email ||
                       !orderData.address ||
                       !orderData.city ||

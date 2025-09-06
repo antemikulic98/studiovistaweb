@@ -1,17 +1,9 @@
+import Image from 'next/image';
+import React from 'react';
+import { Translations } from '../types/translations';
+
 interface TestimonialsProps {
-  t: {
-    testimonials: {
-      badge: string;
-      title: string;
-      subtitle: string;
-      description: string;
-      customers: string;
-      stats: {
-        satisfactionRate: string;
-        supportAvailable: string;
-      };
-    };
-  };
+  t: Translations;
 }
 
 export default function Testimonials({ t }: TestimonialsProps) {

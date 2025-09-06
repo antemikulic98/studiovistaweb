@@ -1,20 +1,12 @@
 'use client';
 
 import { ChevronRight } from 'lucide-react';
+import { Translations } from '../types/translations';
 
 interface HeaderProps {
   language: 'hr' | 'en';
   setLanguage: (lang: 'hr' | 'en') => void;
-  translations: {
-    nav: {
-      products: string;
-      process: string;
-      contact: string;
-    };
-    hero: {
-      cta: string;
-    };
-  };
+  translations: Translations;
   openModal: () => void;
 }
 

@@ -1,26 +1,7 @@
+import { Translations } from '../types/translations';
+
 interface HowItWorksProps {
-  t: {
-    process: {
-      badge: string;
-      title: string;
-      subtitle: string;
-      steps: {
-        upload: {
-          title: string;
-          description: string;
-        };
-        customize: {
-          title: string;
-          description: string;
-        };
-        receive: {
-          title: string;
-          description: string;
-        };
-      };
-      cta: string;
-    };
-  };
+  t: Translations;
   openModal: () => void;
 }
 
@@ -57,17 +38,17 @@ export default function HowItWorks({ t, openModal }: HowItWorksProps) {
                 </div>
               </div>
               <h3 className='text-2xl font-bold text-gray-900 mb-4'>
-                {t.process.step2.heading}
+                {t.process.step2?.heading}
               </h3>
               <p className='text-gray-600 leading-relaxed mb-6'>
-                {t.process.step2.description}
+                {t.process.step2?.description}
               </p>
               <div className='bg-gray-50 rounded-2xl p-4 border border-gray-200'>
                 <div className='text-sm text-gray-500 mb-2'>
-                  {t.quality.formats.title}
+                  Supported Formats
                 </div>
                 <div className='text-sm font-medium text-gray-900'>
-                  {t.quality.formats.supported}
+                  JPG, PNG, HEIC, WebP
                 </div>
               </div>
             </div>
@@ -83,17 +64,15 @@ export default function HowItWorks({ t, openModal }: HowItWorksProps) {
                 </div>
               </div>
               <h3 className='text-2xl font-bold text-gray-900 mb-4'>
-                {t.process.step3.heading}
+                {t.process.step3?.heading}
               </h3>
               <p className='text-gray-600 leading-relaxed mb-6'>
-                {t.process.step3.description}
+                {t.process.step3?.description}
               </p>
               <div className='bg-gray-50 rounded-2xl p-4 border border-gray-200'>
-                <div className='text-sm text-gray-500 mb-2'>
-                  {t.quality.check}
-                </div>
+                <div className='text-sm text-gray-500 mb-2'>Quality Check</div>
                 <div className='text-sm font-medium text-gray-900'>
-                  {t.quality.preview}
+                  Preview & Approve
                 </div>
               </div>
             </div>

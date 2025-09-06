@@ -1,27 +1,7 @@
+import { Translations } from '../types/translations';
+
 interface CTASectionProps {
-  t: {
-    testimonials: {
-      cta: {
-        ready: string;
-        title: string;
-        subtitle: string;
-        pricing: string;
-      };
-    };
-    process: {
-      cta: string;
-    };
-    footer: {
-      features: {
-        turnaround: string;
-        turnaroundDesc: string;
-        quality: string;
-        qualityDesc: string;
-        shipping: string;
-        shippingDesc: string;
-      };
-    };
-  };
+  t: Translations;
   openModal: () => void;
 }
 

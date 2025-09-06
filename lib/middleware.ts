@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { serverAuth, isAdmin } from './auth';
 
+// Extend NextRequest to include user
+interface AuthenticatedRequest extends NextRequest {
+  user?: {
+    userId: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+}
+
+type RouteHandler = (
+  request: NextRequest,
+  params?: { params: { [key: string]: string } }
+) => Promise<NextResponse>;
+
 // Middleware to protect admin routes
-export function requireAuth(handler: Function) {
-  return async (request: NextRequest, ...args: any[]) => {
+export function requireAuth(handler: RouteHandler) {
+  return async (
+    request: NextRequest,
+    params?: { params: { [key: string]: string } }
+  ) => {
     try {
       const user = serverAuth.getUserFromRequest(request);
 
@@ -15,9 +33,9 @@ export function requireAuth(handler: Function) {
       }
 
       // Add user to request context (if needed)
-      (request as any).user = user;
+      (request as AuthenticatedRequest).user = user;
 
-      return await handler(request, ...args);
+      return await handler(request, params);
     } catch (error) {
       console.error('Auth middleware error:', error);
       return NextResponse.json(
@@ -29,8 +47,11 @@ export function requireAuth(handler: Function) {
 }
 
 // Middleware to protect admin-only routes
-export function requireAdmin(handler: Function) {
-  return async (request: NextRequest, ...args: any[]) => {
+export function requireAdmin(handler: RouteHandler) {
+  return async (
+    request: NextRequest,
+    params?: { params: { [key: string]: string } }
+  ) => {
     try {
       const user = serverAuth.getUserFromRequest(request);
 
@@ -49,9 +70,9 @@ export function requireAdmin(handler: Function) {
       }
 
       // Add user to request context (if needed)
-      (request as any).user = user;
+      (request as AuthenticatedRequest).user = user;
 
-      return await handler(request, ...args);
+      return await handler(request, params);
     } catch (error) {
       console.error('Admin middleware error:', error);
       return NextResponse.json(

@@ -63,7 +63,12 @@ export async function PUT(
     const body = await request.json();
 
     // Build update object
-    const updateData: any = {
+    const updateData: {
+      status: string;
+      updatedAt: Date;
+      adminNotes?: string;
+      trackingId?: string;
+    } = {
       status: body.status,
       updatedAt: new Date(),
     };

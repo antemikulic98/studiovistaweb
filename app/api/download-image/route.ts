@@ -9,11 +9,6 @@ export async function GET(request: NextRequest) {
     console.log('=== DOWNLOAD DEBUG ===');
     console.log('Download request for URL:', imageUrl);
     console.log('Filename:', filename);
-    console.log('URL starts with data:', imageUrl.startsWith('data:'));
-    console.log(
-      'URL includes digitaloceanspaces:',
-      imageUrl.includes('.digitaloceanspaces.com')
-    );
 
     if (!imageUrl) {
       console.error('No image URL provided');
@@ -23,7 +18,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    let imageBuffer: ArrayBuffer;
+    console.log('URL starts with data:', imageUrl.startsWith('data:'));
+    console.log(
+      'URL includes digitaloceanspaces:',
+      imageUrl.includes('.digitaloceanspaces.com')
+    );
+
+    let imageBuffer: ArrayBuffer | undefined;
     let contentType = 'image/jpeg';
     let extension = 'jpg';
 
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
         urlsToTry.push(directUrl);
       }
 
-      let lastError = null;
+      let lastError: Error | null = null;
 
       for (const urlToTry of urlsToTry) {
         try {
@@ -99,7 +100,7 @@ export async function GET(request: NextRequest) {
             );
           }
         } catch (error) {
-          lastError = error;
+          lastError = error instanceof Error ? error : new Error(String(error));
         }
       }
 

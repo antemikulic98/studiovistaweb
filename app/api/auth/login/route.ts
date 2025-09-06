@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { connectDB } from '../../../../config/database';
-
-// Import User model directly
-const User = require('../../../../models/User');
+import User from '../../../../models/User';
 
 export async function POST(request: NextRequest) {
   try {

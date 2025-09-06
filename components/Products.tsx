@@ -1,33 +1,18 @@
 import Image from 'next/image';
 import { Palette } from 'lucide-react';
+import { Translations } from '../types/translations';
 
 interface ProductsProps {
-  t: {
-    products: {
-      badge: string;
-      title: string;
-      subtitle: string;
-      canvas: {
-        name: string;
-        description: string;
-      };
-      framed: {
-        name: string;
-        description: string;
-      };
-      sticker: {
-        name: string;
-        description: string;
-      };
-    };
-  };
+  t: Translations;
   openModal: (printType?: 'canvas' | 'framed' | 'sticker') => void;
   sizeOptions: {
     [key: string]: {
       name: string;
-      price: number;
-      dimensions: string;
-    }[];
+      canvas: number;
+      framed: number;
+      sticker: number;
+      dimensions: { width: number; height: number };
+    };
   };
 }
 
@@ -85,13 +70,11 @@ export default function Products({ t, openModal, sizeOptions }: ProductsProps) {
                   <span className='text-3xl font-bold text-gray-900'>
                     €
                     {Math.min(
-                      ...Object.values(sizeOptions).map((s) =>
-                        Math.min(...s.map((opt) => opt.price))
-                      )
+                      ...Object.values(sizeOptions).map((s) => s.canvas)
                     )}
                   </span>
                   <span className='text-gray-500 ml-1'>
-                    {t.products.canvas.from.toLowerCase()}
+                    {t.products.canvas.from?.toLowerCase()}
                   </span>
                 </div>
                 <div className='text-right'>
@@ -149,9 +132,7 @@ export default function Products({ t, openModal, sizeOptions }: ProductsProps) {
                   <span className='text-3xl font-bold text-gray-900'>
                     €
                     {Math.min(
-                      ...Object.values(sizeOptions).map((s) =>
-                        Math.min(...s.map((opt) => opt.price))
-                      )
+                      ...Object.values(sizeOptions).map((s) => s.framed)
                     )}
                   </span>
                   <span className='text-gray-500 ml-1'>starting</span>
@@ -206,13 +187,11 @@ export default function Products({ t, openModal, sizeOptions }: ProductsProps) {
                   <span className='text-3xl font-bold text-gray-900'>
                     €
                     {Math.min(
-                      ...Object.values(sizeOptions).map((s) =>
-                        Math.min(...s.map((opt) => opt.price))
-                      )
+                      ...Object.values(sizeOptions).map((s) => s.sticker)
                     )}
                   </span>
                   <span className='text-gray-500 ml-1'>
-                    {t.products.sticker.from.toLowerCase()}
+                    {t.products.sticker.from?.toLowerCase()}
                   </span>
                 </div>
                 <div className='text-right'>

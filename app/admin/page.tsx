@@ -181,7 +181,10 @@ export default function AdminDashboard() {
     trackingIdValue?: string
   ) => {
     try {
-      const body: any = { status: newStatus };
+      const body: {
+        status: OrderData['status'];
+        trackingId?: string;
+      } = { status: newStatus };
       if (trackingIdValue !== undefined) {
         body.trackingId = trackingIdValue;
       }
@@ -1212,7 +1215,9 @@ export default function AdminDashboard() {
                                   const img = e.target as HTMLImageElement;
                                   if (!img.src.includes('api/image-proxy'))
                                     return;
-                                  img.src = selectedOrder.printData.imageUrl;
+                                  if (selectedOrder.printData.imageUrl) {
+                                    img.src = selectedOrder.printData.imageUrl;
+                                  }
                                 }}
                               />
                             </div>
@@ -1220,6 +1225,8 @@ export default function AdminDashboard() {
                             <div className='absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 rounded-2xl transition-all duration-300 flex items-center justify-center'>
                               <button
                                 onClick={() => {
+                                  if (!selectedOrder.printData.imageUrl) return;
+
                                   const imageUrl =
                                     selectedOrder.printData.imageUrl.startsWith(
                                       'data:'
@@ -1242,6 +1249,8 @@ export default function AdminDashboard() {
                           <div className='flex space-x-4 mt-6'>
                             <button
                               onClick={() => {
+                                if (!selectedOrder.printData.imageUrl) return;
+
                                 const imageUrl =
                                   selectedOrder.printData.imageUrl.startsWith(
                                     'data:'
@@ -1282,7 +1291,7 @@ export default function AdminDashboard() {
                           </h3>
                           <p className='text-amber-700'>
                             Kupac još nije uploadao sliku za print. Narudžba je
-                            u statusu "Čeka sliku".
+                            u statusu &quot;Čeka sliku&quot;.
                           </p>
                         </div>
                       )}

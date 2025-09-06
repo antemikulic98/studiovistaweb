@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Eye, EyeOff, Lock, User } from 'lucide-react';
 
 export default function Login() {
@@ -137,12 +138,12 @@ export default function Login() {
 
         {/* Back to Home */}
         <div className='text-center mt-6'>
-          <a
+          <Link
             href='/'
             className='text-gray-600 hover:text-gray-900 text-sm font-medium'
           >
             ← Nazad na početnu
-          </a>
+          </Link>
         </div>
       </div>
     </div>

@@ -414,7 +414,16 @@ export default function AdminDashboard() {
             <Filter size={20} className='text-gray-400' />
             <select
               value={filter}
-              onChange={(e) => setFilter(e.target.value as any)}
+              onChange={(e) =>
+                setFilter(
+                  e.target.value as
+                    | 'all'
+                    | 'pending'
+                    | 'awaiting_image'
+                    | 'processing'
+                    | 'completed'
+                )
+              }
               className='border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
             >
               <option value='all'>Sve narudžbe</option>
@@ -768,7 +777,7 @@ export default function AdminDashboard() {
                         </div>
                         <p className='text-yellow-800 text-sm'>
                           Kupac još nije uploadao sliku za print. Narudžba je u
-                          statusu "Čeka sliku".
+                          statusu &quot;Čeka sliku&quot;.
                         </p>
                       </div>
                     )}

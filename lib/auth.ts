@@ -75,13 +75,18 @@ export const serverAuth = {
   verifyToken: (token: string): User | null => {
     try {
       const jwtSecret = process.env.JWT_SECRET || 'your-fallback-secret-key';
-      const decoded = jwt.verify(token, jwtSecret) as any;
+      const decoded = jwt.verify(token, jwtSecret) as jwt.JwtPayload & {
+        userId: string;
+        email: string;
+        name: string;
+        role: string;
+      };
 
       return {
         userId: decoded.userId,
         email: decoded.email,
         name: decoded.name,
-        role: decoded.role,
+        role: decoded.role as 'admin' | 'user',
       };
     } catch (error) {
       console.error('JWT verification failed:', error);
@@ -90,14 +95,17 @@ export const serverAuth = {
   },
 
   // Get user from request (from cookie or Authorization header)
-  getUserFromRequest: (request: any): User | null => {
+  getUserFromRequest: (request: {
+    cookies?: { get(name: string): { value: string } | undefined };
+    headers?: { get(name: string): string | null };
+  }): User | null => {
     try {
       // Try to get token from cookie first
-      let token = request.cookies.get('auth-token')?.value;
+      let token = request.cookies?.get('auth-token')?.value;
 
       // If no cookie, try Authorization header
       if (!token) {
-        const authHeader = request.headers.get('Authorization');
+        const authHeader = request.headers?.get('Authorization');
         if (authHeader && authHeader.startsWith('Bearer ')) {
           token = authHeader.substring(7);
         }

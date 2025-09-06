@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         urlsToTry.push(directUrl);
       }
 
-      let lastError = null;
+      let lastError: Error | null = null;
 
       for (const urlToTry of urlsToTry) {
         try {
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
             );
           }
         } catch (error) {
-          lastError = error;
+          lastError = error instanceof Error ? error : new Error(String(error));
         }
       }
 
