@@ -1986,6 +1986,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@stripe/react-stripe-js@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "@stripe/react-stripe-js@npm:4.0.0"
+  dependencies:
+    prop-types: "npm:^15.7.2"
+  peerDependencies:
+    "@stripe/stripe-js": ">=1.44.1 <8.0.0"
+    react: ">=16.8.0 <20.0.0"
+    react-dom: ">=16.8.0 <20.0.0"
+  checksum: 10/10177352133eb267e1eedd13981f97361cc4de231efe803f4fe913261da4e2b707160439bc409b28443cbfebf9fe146fc587f2785502aaa2050bb6b5236cb61d
+  languageName: node
+  linkType: hard
+
+"@stripe/stripe-js@npm:^7.9.0":
+  version: 7.9.0
+  resolution: "@stripe/stripe-js@npm:7.9.0"
+  checksum: 10/8d568df3cdaa6d5a9de69751388dd7363081634b8e23045c4580950b80af40cb75e72021e5e36b8aea3fc5df27369902f63255bf3a277dadafdae975d2347bbf
+  languageName: node
+  linkType: hard
+
 "@swc/helpers@npm:0.5.15":
   version: 0.5.15
   resolution: "@swc/helpers@npm:0.5.15"
@@ -5837,7 +5857,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prop-types@npm:^15.8.1":
+"prop-types@npm:^15.7.2, prop-types@npm:^15.8.1":
   version: 15.8.1
   resolution: "prop-types@npm:15.8.1"
   dependencies:
@@ -5852,6 +5872,15 @@ __metadata:
   version: 2.3.1
   resolution: "punycode@npm:2.3.1"
   checksum: 10/febdc4362bead22f9e2608ff0171713230b57aff9dddc1c273aa2a651fbd366f94b7d6a71d78342a7c0819906750351ca7f2edd26ea41b626d87d6a13d1bd059
+  languageName: node
+  linkType: hard
+
+"qs@npm:^6.11.0":
+  version: 6.14.0
+  resolution: "qs@npm:6.14.0"
+  dependencies:
+    side-channel: "npm:^1.1.0"
+  checksum: 10/a60e49bbd51c935a8a4759e7505677b122e23bf392d6535b8fc31c1e447acba2c901235ecb192764013cd2781723dc1f61978b5fdd93cc31d7043d31cdc01974
   languageName: node
   linkType: hard
 
@@ -6570,6 +6599,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"stripe@npm:^18.5.0":
+  version: 18.5.0
+  resolution: "stripe@npm:18.5.0"
+  dependencies:
+    qs: "npm:^6.11.0"
+  peerDependencies:
+    "@types/node": ">=12.x.x"
+  peerDependenciesMeta:
+    "@types/node":
+      optional: true
+  checksum: 10/cab62e73580da30bf2de6b7da3fe36136938cd747813cb6968cb8f454d16df16423659dfcaa2f1fb55af594c983363363ac57caff941bcfd36660eaad1e45e5d
+  languageName: node
+  linkType: hard
+
 "strnum@npm:^2.1.0":
   version: 2.1.1
   resolution: "strnum@npm:2.1.1"
@@ -6586,6 +6629,8 @@ __metadata:
     "@eslint/eslintrc": "npm:^3"
     "@react-three/drei": "npm:^10.7.4"
     "@react-three/fiber": "npm:^9.3.0"
+    "@stripe/react-stripe-js": "npm:^4.0.0"
+    "@stripe/stripe-js": "npm:^7.9.0"
     "@tailwindcss/postcss": "npm:^4"
     "@types/bcrypt": "npm:^6.0.0"
     "@types/canvas-confetti": "npm:^1.9.0"
@@ -6608,6 +6653,7 @@ __metadata:
     next: "npm:15.5.0"
     react: "npm:19.1.0"
     react-dom: "npm:19.1.0"
+    stripe: "npm:^18.5.0"
     tailwindcss: "npm:^4"
     three: "npm:^0.179.1"
     typescript: "npm:^5"

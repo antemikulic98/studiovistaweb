@@ -31,7 +31,7 @@ interface OrderData {
     address: string;
     city: string;
     postalCode: string;
-    paymentMethod: 'card' | 'paypal' | 'bank';
+    paymentMethod: 'stripe' | 'cod' | 'bank';
   };
   printData: {
     type: 'canvas' | 'framed' | 'sticker';

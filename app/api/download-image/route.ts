@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
     console.log('Download request for URL:', imageUrl);
     console.log('Filename:', filename);
 
-    if (!imageUrl) {
-      console.error('No image URL provided');
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      console.error('No valid image URL provided');
       return NextResponse.json(
         { success: false, error: 'URL slike je obavezan' },
         { status: 400 }

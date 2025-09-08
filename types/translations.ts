@@ -72,16 +72,17 @@ export interface Translations {
       modern?: string;
     };
   };
-  whyChooseUs?: {
+  whyChooseUs: {
     badge: string;
     title: string;
     subtitle: string;
+    description: string;
     features: {
-      quality: {
+      speed: {
         title: string;
         description: string;
       };
-      speed: {
+      quality: {
         title: string;
         description: string;
       };
@@ -91,11 +92,10 @@ export interface Translations {
       };
     };
     stats: {
-      experience: string;
-      customers: string;
       satisfaction: string;
-      awards: string;
-      award: string;
+      delivered: string;
+      industry: string;
+      leader: string;
     };
   };
   process: {

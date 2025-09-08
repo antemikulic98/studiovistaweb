@@ -23,8 +23,8 @@ export default function HowItWorks({ t, openModal }: HowItWorksProps) {
         </div>
 
         <div className='relative'>
-          {/* Connection Line */}
-          <div className='hidden lg:block absolute top-24 left-0 right-0 h-px bg-gray-300 z-0'></div>
+          {/* Connection Line - positioned through the middle of number containers */}
+          <div className='hidden lg:block absolute top-12 left-0 right-0 h-1 bg-gray-300 z-0'></div>
 
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-12 relative z-10'>
             {/* Step 1 */}
@@ -33,15 +33,12 @@ export default function HowItWorks({ t, openModal }: HowItWorksProps) {
                 <div className='w-24 h-24 mx-auto bg-gray-900 rounded-3xl flex items-center justify-center text-white text-2xl font-bold shadow-2xl group-hover:scale-110 transition-transform duration-300'>
                   01
                 </div>
-                <div className='absolute -top-3 -right-3 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center'>
-                  <span className='text-white text-sm'>📤</span>
-                </div>
               </div>
               <h3 className='text-2xl font-bold text-gray-900 mb-4'>
-                {t.process.step2?.heading}
+                {t.process.step1?.title}
               </h3>
               <p className='text-gray-600 leading-relaxed mb-6'>
-                {t.process.step2?.description}
+                {t.process.step1?.desc}
               </p>
               <div className='bg-gray-50 rounded-2xl p-4 border border-gray-200'>
                 <div className='text-sm text-gray-500 mb-2'>
@@ -59,15 +56,12 @@ export default function HowItWorks({ t, openModal }: HowItWorksProps) {
                 <div className='w-24 h-24 mx-auto bg-gray-900 rounded-3xl flex items-center justify-center text-white text-2xl font-bold shadow-2xl group-hover:scale-110 transition-transform duration-300'>
                   02
                 </div>
-                <div className='absolute -top-3 -right-3 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center'>
-                  <span className='text-white text-sm'>🎨</span>
-                </div>
               </div>
               <h3 className='text-2xl font-bold text-gray-900 mb-4'>
-                {t.process.step3?.heading}
+                {t.process.step2?.title}
               </h3>
               <p className='text-gray-600 leading-relaxed mb-6'>
-                {t.process.step3?.description}
+                {t.process.step2?.desc}
               </p>
               <div className='bg-gray-50 rounded-2xl p-4 border border-gray-200'>
                 <div className='text-sm text-gray-500 mb-2'>Quality Check</div>
@@ -83,16 +77,12 @@ export default function HowItWorks({ t, openModal }: HowItWorksProps) {
                 <div className='w-24 h-24 mx-auto bg-gray-900 rounded-3xl flex items-center justify-center text-white text-2xl font-bold shadow-2xl group-hover:scale-110 transition-transform duration-300'>
                   03
                 </div>
-                <div className='absolute -top-3 -right-3 w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center'>
-                  <span className='text-white text-sm'>🚚</span>
-                </div>
               </div>
               <h3 className='text-2xl font-bold text-gray-900 mb-4'>
-                Craft & Deliver
+                {t.process.step3?.title}
               </h3>
               <p className='text-gray-600 leading-relaxed mb-6'>
-                Our artisans carefully craft your print using premium materials,
-                then package and ship it with protective care to your door.
+                {t.process.step3?.desc}
               </p>
               <div className='bg-gray-50 rounded-2xl p-4 border border-gray-200'>
                 <div className='text-sm text-gray-500 mb-2'>Delivery time:</div>

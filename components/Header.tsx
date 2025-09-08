@@ -78,8 +78,8 @@ export default function Header({
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className='md:hidden flex items-center gap-4'>
+          {/* Mobile Menu - Only Language Switcher */}
+          <div className='md:hidden flex items-center'>
             <div className='flex items-center bg-gray-100 rounded-full p-1'>
               <button
                 onClick={() => setLanguage('hr')}
@@ -102,12 +102,6 @@ export default function Header({
                 EN
               </button>
             </div>
-            <button
-              onClick={() => openModal()}
-              className='bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors'
-            >
-              {t.nav.getStarted}
-            </button>
           </div>
         </div>
       </div>

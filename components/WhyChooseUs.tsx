@@ -14,16 +14,16 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
           <div className='space-y-8'>
             <div className='space-y-6'>
               <div className='inline-flex items-center px-4 py-2 bg-gray-900 text-white rounded-full text-sm font-medium'>
-                Why Choose Us
+                {t.whyChooseUs.badge}
               </div>
               <h2 className='text-4xl sm:text-5xl font-bold text-gray-900 leading-tight'>
-                Crafted with
-                <span className='block text-gray-600'>Precision & Care</span>
+                {t.whyChooseUs.title}
+                <span className='block text-gray-600'>
+                  {t.whyChooseUs.subtitle}
+                </span>
               </h2>
               <p className='text-xl text-gray-600 leading-relaxed'>
-                Every piece we create is a testament to our commitment to
-                excellence, combining cutting-edge technology with artisanal
-                craftsmanship.
+                {t.whyChooseUs.description}
               </p>
             </div>
 
@@ -35,10 +35,10 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
                 </div>
                 <div>
                   <h3 className='text-xl font-bold text-gray-900 mb-2'>
-                    Brza dostava
+                    {t.whyChooseUs.features.speed.title}
                   </h3>
                   <p className='text-gray-600'>
-                    Brza obrada i isporuka unutar 3-5 radnih dana
+                    {t.whyChooseUs.features.speed.description}
                   </p>
                 </div>
               </div>
@@ -50,11 +50,10 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
                 </div>
                 <div>
                   <h3 className='text-xl font-bold text-gray-900 mb-2'>
-                    Color-Perfect Guarantee
+                    {t.whyChooseUs.features.quality.title}
                   </h3>
                   <p className='text-gray-600'>
-                    Advanced color calibration ensures your prints match your
-                    vision exactly, every time.
+                    {t.whyChooseUs.features.quality.description}
                   </p>
                 </div>
               </div>
@@ -66,10 +65,10 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
                 </div>
                 <div>
                   <h3 className='text-xl font-bold text-gray-900 mb-2'>
-                    Vrhunska kvaliteta
+                    {t.whyChooseUs.features.support.title}
                   </h3>
                   <p className='text-gray-600'>
-                    Premium materijali i precizna izrada
+                    {t.whyChooseUs.features.support.description}
                   </p>
                 </div>
               </div>
@@ -98,7 +97,7 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
                   <div>
                     <div className='font-bold text-gray-900'>99.8%</div>
                     <div className='text-sm text-gray-600'>
-                      Zadovoljstvo kupaca
+                      {t.whyChooseUs.stats.satisfaction}
                     </div>
                   </div>
                 </div>
@@ -109,7 +108,7 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
                   <div>
                     <div className='font-bold text-gray-900'>50,000+</div>
                     <div className='text-sm text-gray-600'>
-                      Prints Delivered
+                      {t.whyChooseUs.stats.delivered}
                     </div>
                   </div>
                 </div>
@@ -120,8 +119,12 @@ export default function WhyChooseUs({ t }: WhyChooseUsProps) {
             <div className='absolute -top-6 -right-6 bg-gray-900 text-white rounded-2xl p-6 shadow-xl'>
               <div className='text-center'>
                 <div className='text-2xl mb-2'>🥇</div>
-                <div className='font-bold text-sm'>Industry</div>
-                <div className='font-bold text-sm'>Leader</div>
+                <div className='font-bold text-sm'>
+                  {t.whyChooseUs.stats.industry}
+                </div>
+                <div className='font-bold text-sm'>
+                  {t.whyChooseUs.stats.leader}
+                </div>
               </div>
             </div>
           </div>

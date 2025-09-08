@@ -9,7 +9,7 @@ export interface IOrder extends Document {
     address: string;
     city: string;
     postalCode: string;
-    paymentMethod: 'card' | 'paypal' | 'bank' | 'cash';
+    paymentMethod: 'stripe' | 'cod' | 'bank';
   };
   printData: {
     type: 'canvas' | 'framed' | 'sticker';
@@ -33,7 +33,7 @@ const CustomerDataSchema = new Schema({
   postalCode: { type: String, required: true },
   paymentMethod: {
     type: String,
-    enum: ['card', 'paypal', 'bank', 'cash'],
+    enum: ['stripe', 'cod', 'bank'],
     required: true,
   },
 });
@@ -63,10 +63,18 @@ const OrderSchema = new Schema<IOrder>(
     printData: { type: PrintDataSchema, required: true },
     status: {
       type: String,
-      enum: ['pending', 'processing', 'completed', 'shipped', 'cancelled'],
+      enum: [
+        'pending',
+        'paid',
+        'processing',
+        'completed',
+        'shipped',
+        'cancelled',
+      ],
       default: 'pending',
     },
     trackingId: { type: String },
+    stripeSessionId: { type: String }, // Store Stripe session ID for reference
   },
   {
     timestamps: true,
