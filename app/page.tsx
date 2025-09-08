@@ -540,35 +540,57 @@ export default function Home() {
   const handleCompleteOrder = async () => {
     try {
       setIsUploading(true);
-      
+
       let finalImageUrl = uploadedImage;
 
       // Upload image to DigitalOcean Spaces if we have a file
+      console.log('🔍 Debug info:', {
+        hasSelectedImageFile: !!window.selectedImageFile,
+        selectedImageFileType: window.selectedImageFile?.type,
+        selectedImageFileName: window.selectedImageFile?.name,
+        selectedImageFileSize: window.selectedImageFile?.size,
+        uploadedImage: uploadedImage?.substring(0, 50) + '...',
+        shouldUpload: window.selectedImageFile && !uploadedImage?.startsWith('https://')
+      });
+
       if (window.selectedImageFile && !uploadedImage?.startsWith('https://')) {
         console.log('📤 Uploading image to DigitalOcean Spaces...');
         
-        const formData = new FormData();
-        formData.append('image', window.selectedImageFile);
-        formData.append('printSize', selectedSize);
+        try {
+          const formData = new FormData();
+          formData.append('file', window.selectedImageFile);
+          formData.append('printSize', selectedSize);
 
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
+          const uploadResponse = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData,
+          });
 
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text();
-          throw new Error(`Upload failed: ${errorText}`);
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            
+            if (uploadResult.success) {
+              finalImageUrl = uploadResult.imageUrl;
+              console.log('✅ Image uploaded successfully:', finalImageUrl);
+            } else {
+              console.warn('⚠️ Image upload failed:', uploadResult.error);
+              console.log('📝 Proceeding with order without cloud image URL');
+            }
+          } else {
+            const errorText = await uploadResponse.text();
+            console.warn('⚠️ Image upload failed:', errorText);
+            console.log('📝 Proceeding with order without cloud image URL');
+          }
+        } catch (uploadError) {
+          console.warn('⚠️ Image upload error:', uploadError);
+          console.log('📝 Proceeding with order without cloud image URL');
         }
+      }
 
-        const uploadResult = await uploadResponse.json();
-        
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Greška pri uploadu slike');
-        }
-        
-        finalImageUrl = uploadResult.imageUrl;
-        console.log('✅ Image uploaded successfully:', finalImageUrl);
+      // Ensure we have some image URL (cloud URL or fallback to base64)
+      if (!finalImageUrl && uploadedImage) {
+        finalImageUrl = uploadedImage;
+        console.log('🔄 Using base64 image data as fallback');
       }
 
       // Create order object
@@ -585,7 +607,8 @@ export default function Home() {
         printData: {
           type: selectedPrintType,
           size: sizeOptions[selectedSize as keyof typeof sizeOptions].name,
-          frameColor: selectedPrintType === 'framed' ? selectedFrameColor : undefined,
+          frameColor:
+            selectedPrintType === 'framed' ? selectedFrameColor : undefined,
           price: getCurrentPrice(),
           imageUrl: finalImageUrl,
         },
@@ -613,7 +636,7 @@ export default function Home() {
       }
 
       console.log('✅ Order saved successfully:', result);
-      
+
       // Set the real order ID and show thank you screen
       setCompletedOrderId(result.data._id);
       setModalStep('thank-you');
@@ -643,11 +666,12 @@ export default function Home() {
           origin: { x: 0.75, y: 0.6 },
         });
       }, 300);
-
     } catch (error) {
       console.error('❌ Error submitting order:', error);
       setUploadError(
-        `Dogodila se greška pri slanju narudžbe: ${error instanceof Error ? error.message : 'Unknown error'}. Molimo pokušajte ponovno.`
+        `Dogodila se greška pri slanju narudžbe: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }. Molimo pokušajte ponovno.`
       );
     } finally {
       setIsUploading(false);
