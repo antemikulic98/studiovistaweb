@@ -539,24 +539,83 @@ export default function Home() {
 
   const handleCompleteOrder = async () => {
     try {
-      // For now, simulate the order process without backend APIs
-      console.log('Order Data:', {
-        customerData: orderData,
+      setIsUploading(true);
+      
+      let finalImageUrl = uploadedImage;
+
+      // Upload image to DigitalOcean Spaces if we have a file
+      if (window.selectedImageFile && !uploadedImage?.startsWith('https://')) {
+        console.log('📤 Uploading image to DigitalOcean Spaces...');
+        
+        const formData = new FormData();
+        formData.append('image', window.selectedImageFile);
+        formData.append('printSize', selectedSize);
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          throw new Error(`Upload failed: ${errorText}`);
+        }
+
+        const uploadResult = await uploadResponse.json();
+        
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Greška pri uploadu slike');
+        }
+        
+        finalImageUrl = uploadResult.imageUrl;
+        console.log('✅ Image uploaded successfully:', finalImageUrl);
+      }
+
+      // Create order object
+      const order = {
+        customerData: {
+          name: `${orderData.firstName} ${orderData.lastName}`.trim(),
+          email: orderData.email,
+          phone: orderData.phone,
+          address: orderData.address,
+          city: orderData.city,
+          postalCode: orderData.postalCode,
+          paymentMethod: orderData.paymentMethod,
+        },
         printData: {
           type: selectedPrintType,
           size: sizeOptions[selectedSize as keyof typeof sizeOptions].name,
-          frameColor:
-            selectedPrintType === 'framed' ? selectedFrameColor : undefined,
+          frameColor: selectedPrintType === 'framed' ? selectedFrameColor : undefined,
           price: getCurrentPrice(),
-          imageUrl: uploadedImage,
+          imageUrl: finalImageUrl,
         },
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+      };
+
+      console.log('💾 Saving order to database:', order);
+
+      // Send order to API
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
       });
 
-      // Generate a temporary order ID
-      const tempOrderId = 'ORDER-' + Date.now().toString().slice(-8);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Order creation failed: ${errorText}`);
+      }
 
-      // Set order ID and show thank you screen immediately
-      setCompletedOrderId(tempOrderId);
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to submit order');
+      }
+
+      console.log('✅ Order saved successfully:', result);
+      
+      // Set the real order ID and show thank you screen
+      setCompletedOrderId(result.data._id);
       setModalStep('thank-you');
 
       // Clean up the temporary file reference
@@ -585,45 +644,13 @@ export default function Home() {
         });
       }, 300);
 
-      // TODO: Later implement actual API calls when backend is configured
-      /*
-      // Upload image to DigitalOcean Spaces if we have a file
-      if ((window as any).selectedImageFile) {
-        const formData = new FormData();
-        formData.append('file', (window as any).selectedImageFile);
-        formData.append('printSize', selectedSize);
-
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const uploadResult = await uploadResponse.json();
-        
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Greška pri uploadu slike');
-        }
-        imageUrl = uploadResult.imageUrl;
-      }
-
-      // Send order to API
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order),
-      });
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to submit order');
-      }
-      setCompletedOrderId(result.data._id);
-      */
     } catch (error) {
-      console.error('Error submitting order:', error);
-      alert(
-        'Dogodila se greška pri slanju narudžbe. Molimo pokušajte ponovno.'
+      console.error('❌ Error submitting order:', error);
+      setUploadError(
+        `Dogodila se greška pri slanju narudžbe: ${error instanceof Error ? error.message : 'Unknown error'}. Molimo pokušajte ponovno.`
       );
+    } finally {
+      setIsUploading(false);
     }
   };
 

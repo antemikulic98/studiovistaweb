@@ -9,7 +9,7 @@ export interface IOrder extends Document {
     address: string;
     city: string;
     postalCode: string;
-    paymentMethod: 'card' | 'paypal' | 'bank';
+    paymentMethod: 'card' | 'paypal' | 'bank' | 'cash';
   };
   printData: {
     type: 'canvas' | 'framed' | 'sticker';
@@ -33,7 +33,7 @@ const CustomerDataSchema = new Schema({
   postalCode: { type: String, required: true },
   paymentMethod: {
     type: String,
-    enum: ['card', 'paypal', 'bank'],
+    enum: ['card', 'paypal', 'bank', 'cash'],
     required: true,
   },
 });
