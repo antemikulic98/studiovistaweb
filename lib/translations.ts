@@ -14,7 +14,7 @@ const translations = {
       description:
         'Profesionalni printovi na platnu i okviri po mjeri koji pretvaraju vaše najdraže uspomene u muzejsku kvalitetu zidne umjetnosti.',
       createButton: 'Stvori print',
-      galleryButton: 'Pogledaj galeriju',
+      galleryButton: 'Istraži proizvode',
       stats: {
         customers: 'Zadovoljni kupci',
         rating: 'Ocjena',

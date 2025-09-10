@@ -45,9 +45,9 @@ function HomeContent() {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedPrintType, setSelectedPrintType] = useState<
-    'canvas' | 'framed' | 'sticker'
-  >('canvas');
-  const [selectedSize, setSelectedSize] = useState<string>('30x20');
+    'canvas' | 'framed' | 'sticker' | ''
+  >('');
+  const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedFrameColor, setSelectedFrameColor] = useState<
     'black' | 'silver'
   >('black');
@@ -185,12 +185,16 @@ function HomeContent() {
   }, [searchParams]);
 
   const getCurrentPrice = () => {
+    if (!selectedSize || !selectedPrintType) return 0;
     const size = sizeOptions[selectedSize as keyof typeof sizeOptions];
+    if (!size) return 0;
     return size[selectedPrintType as keyof typeof size] as number;
   };
 
   const getCurrentDimensions = () => {
-    return sizeOptions[selectedSize as keyof typeof sizeOptions].dimensions;
+    if (!selectedSize) return { width: 30, height: 20 }; // Default dimensions
+    const size = sizeOptions[selectedSize as keyof typeof sizeOptions];
+    return size ? size.dimensions : { width: 30, height: 20 };
   };
 
   const handleFileUpload = async (
@@ -286,13 +290,13 @@ function HomeContent() {
   };
 
   const handleAddToCart = () => {
-    if (!currentImage) return;
+    if (!currentImage || !selectedPrintType || !selectedSize) return;
 
     const cartItem: CartItem = {
       id: `${Date.now()}-${Math.random()}`,
       imageFile: currentImage.file,
       previewUrl: currentImage.previewUrl,
-      printType: selectedPrintType,
+      printType: selectedPrintType as 'canvas' | 'framed' | 'sticker',
       size: selectedSize,
       frameColor: selectedFrameColor,
       quantity: quantity,
@@ -304,7 +308,8 @@ function HomeContent() {
 
     // Reset current image and form
     setCurrentImage(null);
-    setSelectedSize('30x20');
+    setSelectedSize('');
+    setSelectedPrintType('');
     setSelectedFrameColor('black');
     setQuantity(1);
 

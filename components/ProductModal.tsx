@@ -31,6 +31,11 @@ import {
   ChevronUp,
   Minus,
   Plus,
+  Camera,
+  ShoppingCart,
+  Palette,
+  Frame,
+  Sticker,
 } from 'lucide-react';
 import CartSummary from './CartSummary';
 // No longer need Stripe Elements for checkout flow
@@ -460,7 +465,7 @@ interface ProductModalProps {
   closeModal: () => void;
   cartItems: CartItem[];
   currentImage: { file: File; previewUrl: string } | null;
-  selectedPrintType: 'canvas' | 'framed' | 'sticker';
+  selectedPrintType: 'canvas' | 'framed' | 'sticker' | '';
   selectedSize: string;
   selectedFrameColor: 'black' | 'silver';
   quantity: number;
@@ -469,7 +474,7 @@ interface ProductModalProps {
   uploadError: string | null;
   removeFromCart: (itemId: string) => void;
   handleAddToCart: () => void;
-  setSelectedPrintType: (type: 'canvas' | 'framed' | 'sticker') => void;
+  setSelectedPrintType: (type: 'canvas' | 'framed' | 'sticker' | '') => void;
   setSelectedSize: (size: string) => void;
   setSelectedFrameColor: (color: 'black' | 'silver') => void;
   setQuantity: (quantity: number) => void;
@@ -779,31 +784,27 @@ export default function ProductModal({
                         </div>
                       ) : (
                         <div className='space-y-4'>
-                          {/* Current Image Preview */}
+                          {/* Current Image Preview with Change Button */}
                           <div className='mb-4'>
-                            <div className='relative rounded-xl overflow-hidden group max-w-xs mx-auto'>
+                            <div className='relative rounded-xl overflow-hidden max-w-md mx-auto'>
                               <Image
                                 src={currentImage.previewUrl}
                                 alt='Current image'
-                                width={300}
-                                height={200}
-                                className='w-full h-48 object-cover'
+                                width={400}
+                                height={240}
+                                className='w-full h-56 object-cover'
                               />
-                              <div className='absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
-                                <span className='text-white text-sm font-medium'>
-                                  Klikom promjeni sliku
-                                </span>
-                              </div>
+
+                              {/* Small Change Image Button - Top Right Corner */}
+                              <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className='absolute top-3 right-3 bg-white bg-opacity-95 hover:bg-opacity-100 text-gray-700 hover:text-blue-600 p-2.5 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110'
+                                title='Promijeni sliku'
+                              >
+                                <Camera size={18} />
+                              </button>
                             </div>
                           </div>
-
-                          {/* Upload Different Image */}
-                          <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className='w-full py-2 px-4 border border-blue-600 text-blue-600 font-medium rounded-xl hover:bg-blue-50 transition-colors mb-4'
-                          >
-                            📷 Promijeni sliku
-                          </button>
                         </div>
                       )}
 
@@ -878,8 +879,18 @@ export default function ProductModal({
                                 : 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'
                             }`}
                           >
-                            <div className='font-medium'>Canvas print</div>
-                            <div className='text-xs mt-1 opacity-75'>
+                            <div className='flex items-center gap-2'>
+                              <Palette
+                                size={18}
+                                className={
+                                  selectedPrintType === 'canvas'
+                                    ? 'text-white'
+                                    : 'text-blue-600'
+                                }
+                              />
+                              <div className='font-medium'>Canvas print</div>
+                            </div>
+                            <div className='text-xs mt-1 opacity-75 ml-6'>
                               Premium platno, galerijski omotan
                             </div>
                           </button>
@@ -891,8 +902,18 @@ export default function ProductModal({
                                 : 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'
                             }`}
                           >
-                            <div className='font-medium'>Uokvireni print</div>
-                            <div className='text-xs mt-1 opacity-75'>
+                            <div className='flex items-center gap-2'>
+                              <Frame
+                                size={18}
+                                className={
+                                  selectedPrintType === 'framed'
+                                    ? 'text-white'
+                                    : 'text-blue-600'
+                                }
+                              />
+                              <div className='font-medium'>Uokvireni print</div>
+                            </div>
+                            <div className='text-xs mt-1 opacity-75 ml-6'>
                               S premium okvirom po izboru
                             </div>
                           </button>
@@ -904,8 +925,20 @@ export default function ProductModal({
                                 : 'bg-white hover:bg-gray-50 text-gray-900 border border-gray-200'
                             }`}
                           >
-                            <div className='font-medium'>Zidna naljepnica</div>
-                            <div className='text-xs mt-1 opacity-75'>
+                            <div className='flex items-center gap-2'>
+                              <Sticker
+                                size={18}
+                                className={
+                                  selectedPrintType === 'sticker'
+                                    ? 'text-white'
+                                    : 'text-blue-600'
+                                }
+                              />
+                              <div className='font-medium'>
+                                Zidna naljepnica
+                              </div>
+                            </div>
+                            <div className='text-xs mt-1 opacity-75 ml-6'>
                               Vodootporna, lako za nanošenje
                             </div>
                           </button>
@@ -932,7 +965,13 @@ export default function ProductModal({
                                 {option.name}
                               </div>
                               <div className='text-lg font-bold mt-1'>
-                                €{option[selectedPrintType]}
+                                {selectedPrintType
+                                  ? `€${
+                                      option[
+                                        selectedPrintType as keyof typeof option
+                                      ]
+                                    }`
+                                  : '€-'}
                               </div>
                             </button>
                           ))}
@@ -1009,13 +1048,22 @@ export default function ProductModal({
                       <div className='mt-6 pt-4 border-t border-gray-100'>
                         <button
                           onClick={handleAddToCart}
-                          className='w-full py-4 px-6 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200'
+                          disabled={!selectedPrintType || !selectedSize}
+                          className={`w-full py-4 px-6 font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ${
+                            !selectedPrintType || !selectedSize
+                              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                              : 'bg-green-600 text-white hover:bg-green-700'
+                          }`}
                         >
                           <span className='flex items-center justify-center gap-2'>
-                            <span className='text-lg'>🛒</span>
+                            <ShoppingCart size={18} />
                             <span>Dodaj u košaricu</span>
                             <span className='bg-green-800 px-2 py-1 rounded-lg text-sm font-bold'>
-                              €{(getCurrentPrice() * quantity).toFixed(2)}
+                              {selectedPrintType && selectedSize
+                                ? `€${(getCurrentPrice() * quantity).toFixed(
+                                    2
+                                  )}`
+                                : 'Odaberi opcije'}
                             </span>
                           </span>
                         </button>
@@ -1023,7 +1071,8 @@ export default function ProductModal({
                         {cartItems.length > 0 && (
                           <div className='mt-3 text-center'>
                             <p className='text-sm text-gray-600'>
-                              🛒 Košarica: {cartItems.length} proizvod
+                              <ShoppingCart size={14} className='inline mr-1' />{' '}
+                              Košarica: {cartItems.length} proizvod
                               {cartItems.length > 1 ? 'a' : ''} •
                               <span className='font-bold text-green-600 ml-1'>
                                 €
@@ -1085,14 +1134,49 @@ export default function ProductModal({
                           <div className='border-t border-gray-200 bg-white'>
                             <div className='p-4 md:p-6'>
                               <div className='relative h-64 md:h-80 rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 shadow-inner'>
-                                <PrintPreview3D
-                                  imageUrl={
-                                    currentImage ? currentImage.previewUrl : ''
-                                  }
-                                  printType={selectedPrintType}
-                                  dimensions={getCurrentDimensions()}
-                                  frameColor={selectedFrameColor}
-                                />
+                                {currentImage &&
+                                selectedPrintType &&
+                                selectedSize ? (
+                                  <PrintPreview3D
+                                    imageUrl={currentImage.previewUrl}
+                                    printType={
+                                      selectedPrintType as
+                                        | 'canvas'
+                                        | 'framed'
+                                        | 'sticker'
+                                    }
+                                    dimensions={getCurrentDimensions()}
+                                    frameColor={selectedFrameColor}
+                                  />
+                                ) : (
+                                  <div className='h-full flex items-center justify-center'>
+                                    <div className='text-center text-gray-500'>
+                                      <Upload
+                                        size={32}
+                                        className='mx-auto mb-3'
+                                      />
+                                      {!currentImage ? (
+                                        <>
+                                          <p className='text-sm font-medium mb-1'>
+                                            Dodaj sliku
+                                          </p>
+                                          <p className='text-xs'>
+                                            za 3D pregled
+                                          </p>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <p className='text-sm font-medium mb-1'>
+                                            Odaberi opcije
+                                          </p>
+                                          <p className='text-xs'>
+                                            tip i veličinu za 3D pregled
+                                          </p>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                               <div className='mt-4 text-center'>
                                 <p className='text-sm text-gray-600'>
@@ -1142,10 +1226,12 @@ export default function ProductModal({
                   </div>
 
                   <div className='flex-1 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 shadow-inner'>
-                    {cartItems.length > 0 ? (
+                    {currentImage && selectedPrintType && selectedSize ? (
                       <PrintPreview3D
-                        imageUrl={currentImage ? currentImage.previewUrl : ''}
-                        printType={selectedPrintType}
+                        imageUrl={currentImage.previewUrl}
+                        printType={
+                          selectedPrintType as 'canvas' | 'framed' | 'sticker'
+                        }
                         dimensions={getCurrentDimensions()}
                         frameColor={selectedFrameColor}
                       />
