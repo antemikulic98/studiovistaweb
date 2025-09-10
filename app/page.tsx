@@ -17,7 +17,7 @@ import Products from '../components/Products';
 import WhyChooseUs from '../components/WhyChooseUs';
 import HowItWorks from '../components/HowItWorks';
 import Testimonials from '../components/Testimonials';
-import CTASection from '../components/CTASection';
+import AboutUs from '../components/AboutUs';
 import Footer from '../components/Footer';
 import translations from '../lib/translations';
 
@@ -25,7 +25,23 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const [language, setLanguage] = useState<'hr' | 'en'>('hr');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  // Cart system - each item has its own configuration
+  interface CartItem {
+    id: string;
+    imageFile: File;
+    previewUrl: string;
+    printType: 'canvas' | 'framed' | 'sticker';
+    size: string;
+    frameColor: 'black' | 'silver';
+    quantity: number;
+    price: number;
+  }
+
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [currentImage, setCurrentImage] = useState<{
+    file: File;
+    previewUrl: string;
+  } | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [selectedPrintType, setSelectedPrintType] = useState<
@@ -35,6 +51,7 @@ function HomeContent() {
   const [selectedFrameColor, setSelectedFrameColor] = useState<
     'black' | 'silver'
   >('black');
+  const [quantity, setQuantity] = useState<number>(1);
   const [modalStep, setModalStep] = useState<
     'customize' | 'order' | 'thank-you'
   >('customize');
@@ -179,42 +196,58 @@ function HomeContent() {
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    console.log('🔄 handleFileUpload called', event);
+    const files = Array.from(event.target.files || []);
+    console.log('📁 Files selected:', files.length, files);
+    if (files.length === 0) {
+      console.log('❌ No files selected');
+      return;
+    }
 
-    // Reset previous states
+    // Reset previous error
     setUploadError(null);
+
+    // Only allow one file at a time for configuration
+    const file = files[0];
+
+    setIsUploading(true);
 
     try {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        throw new Error('Molimo odaberite sliku (JPG, PNG, WebP, TIFF, BMP)');
+        throw new Error(`Datoteka ${file.name} nije slika`);
       }
 
       // Validate file size (10MB limit)
       if (file.size > 10 * 1024 * 1024) {
-        throw new Error('Slika je prevelika. Maksimalna veličina je 10MB');
+        throw new Error(
+          `Slika ${file.name} je prevelika. Maksimalna veličina je 10MB`
+        );
       }
 
-      // Show preview immediately
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUploadedImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      // Clean up previous image if exists
+      if (currentImage) {
+        URL.revokeObjectURL(currentImage.previewUrl);
+      }
 
-      // Store file for later upload to DigitalOcean Spaces when order is completed
-      window.selectedImageFile = file;
+      // Create preview URL (no upload to server yet!)
+      console.log('🖼️ Creating preview for:', file.name);
+      const previewUrl = URL.createObjectURL(file);
+      console.log('✅ Preview created - ready for configuration');
+
+      setCurrentImage({
+        file: file,
+        previewUrl: previewUrl,
+      });
+
+      console.log('✅ Image loaded, ready for configuration');
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('❌ File selection error:', error);
       setUploadError(
-        error instanceof Error ? error.message : 'Greška pri obradi slike'
+        error instanceof Error ? error.message : 'File selection failed'
       );
-
-      // Clear the file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -225,7 +258,8 @@ function HomeContent() {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setUploadedImage(null);
+    setCartItems([]);
+    setCurrentImage(null);
     setIsUploading(false);
     setUploadError(null);
     setSelectedSize('30x20'); // Reset to default size
@@ -248,14 +282,52 @@ function HomeContent() {
       fileInputRef.current.value = '';
     }
 
-    // Clean up temporary file reference
-    delete window.selectedImageFile;
+    // Clean up image URLs if needed (they're already uploaded to server)
+  };
+
+  const handleAddToCart = () => {
+    if (!currentImage) return;
+
+    const cartItem: CartItem = {
+      id: `${Date.now()}-${Math.random()}`,
+      imageFile: currentImage.file,
+      previewUrl: currentImage.previewUrl,
+      printType: selectedPrintType,
+      size: selectedSize,
+      frameColor: selectedFrameColor,
+      quantity: quantity,
+      price: getCurrentPrice() * quantity,
+    };
+
+    setCartItems((prev) => [...prev, cartItem]);
+    console.log('🛒 Added to cart:', cartItem);
+
+    // Reset current image and form
+    setCurrentImage(null);
+    setSelectedSize('30x20');
+    setSelectedFrameColor('black');
+    setQuantity(1);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const handleContinueOrder = () => {
-    if (uploadedImage) {
+    if (cartItems.length > 0) {
       setModalStep('order');
     }
+  };
+
+  const removeFromCart = (itemId: string) => {
+    setCartItems((prev) => {
+      const item = prev.find((item) => item.id === itemId);
+      if (item) {
+        URL.revokeObjectURL(item.previewUrl);
+      }
+      return prev.filter((item) => item.id !== itemId);
+    });
   };
 
   const handleBackToCustomize = () => {
@@ -266,89 +338,130 @@ function HomeContent() {
     try {
       setIsUploading(true);
 
-      let finalImageUrl = uploadedImage;
+      console.log('💳 Processing order - uploading images now...');
 
-      // Upload image to DigitalOcean Spaces if we have a file
-      console.log('🔍 Debug info:', {
-        hasSelectedImageFile: !!window.selectedImageFile,
-        selectedImageFileType: window.selectedImageFile?.type,
-        selectedImageFileName: window.selectedImageFile?.name,
-        selectedImageFileSize: window.selectedImageFile?.size,
-        uploadedImage: uploadedImage?.substring(0, 50) + '...',
-        shouldUpload:
-          window.selectedImageFile && !uploadedImage?.startsWith('https://'),
-      });
+      // Upload each unique image file once and map to cart items
+      const uploadedImages = new Map<File, string>();
+      const finalOrders: Array<{
+        customerData: {
+          name: string;
+          email: string;
+          phone: string;
+          address: string;
+          city: string;
+          postalCode: string;
+          paymentMethod: string;
+        };
+        printData: {
+          type: string;
+          size: string;
+          frameColor?: string;
+          price: number;
+          quantity: number;
+          imageUrl: string;
+        };
+        status: string;
+        createdAt: string;
+      }> = [];
 
-      if (window.selectedImageFile && !uploadedImage?.startsWith('https://')) {
-        console.log('📤 Uploading image to DigitalOcean Spaces...');
+      for (const cartItem of cartItems) {
+        let imageUrl: string;
 
-        try {
+        // Check if we already uploaded this file
+        if (uploadedImages.has(cartItem.imageFile)) {
+          imageUrl = uploadedImages.get(cartItem.imageFile)!;
+          console.log('📋 Reusing already uploaded image:', imageUrl);
+        } else {
+          console.log('📤 Uploading to server:', cartItem.imageFile.name);
           const formData = new FormData();
-          formData.append('file', window.selectedImageFile);
-          formData.append('printSize', selectedSize);
+          formData.append('file', cartItem.imageFile);
 
-          const uploadResponse = await fetch('/api/upload', {
+          const response = await fetch('/api/upload', {
             method: 'POST',
             body: formData,
           });
 
-          if (uploadResponse.ok) {
-            const uploadResult = await uploadResponse.json();
-
-            if (uploadResult.success) {
-              finalImageUrl = uploadResult.imageUrl;
-              console.log('✅ Image uploaded successfully:', finalImageUrl);
-            } else {
-              console.warn('⚠️ Image upload failed:', uploadResult.error);
-              console.log('📝 Proceeding with order without cloud image URL');
-            }
-          } else {
-            const errorText = await uploadResponse.text();
-            console.warn('⚠️ Image upload failed:', errorText);
-            console.log('📝 Proceeding with order without cloud image URL');
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Upload failed:', errorData);
+            throw new Error(`Upload za ${cartItem.imageFile.name} neuspješan`);
           }
-        } catch (uploadError) {
-          console.warn('⚠️ Image upload error:', uploadError);
-          console.log('📝 Proceeding with order without cloud image URL');
+
+          const responseData = await response.json();
+          console.log('📦 API Response:', responseData);
+
+          if (!responseData.success) {
+            throw new Error(
+              responseData.error ||
+                `Upload za ${cartItem.imageFile.name} neuspješan`
+            );
+          }
+
+          const { imageUrl: uploadedUrl } = responseData;
+          console.log('✅ Image uploaded successfully:', uploadedUrl);
+
+          if (!uploadedUrl) {
+            throw new Error(`Nema URL za ${cartItem.imageFile.name}`);
+          }
+
+          imageUrl = uploadedUrl;
+          uploadedImages.set(cartItem.imageFile, imageUrl);
         }
+
+        // Create order for this cart item
+        const order = {
+          customerData: {
+            name: `${orderData.firstName} ${orderData.lastName}`.trim(),
+            email: orderData.email,
+            phone: orderData.phone,
+            address: orderData.address,
+            city: orderData.city,
+            postalCode: orderData.postalCode,
+            paymentMethod: orderData.paymentMethod,
+          },
+          printData: {
+            type: cartItem.printType,
+            size: sizeOptions[cartItem.size as keyof typeof sizeOptions].name,
+            frameColor:
+              cartItem.printType === 'framed' ? cartItem.frameColor : undefined,
+            price: cartItem.price,
+            quantity: cartItem.quantity,
+            imageUrl: imageUrl, // Single image URL per order
+          },
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        };
+
+        finalOrders.push(order);
       }
 
-      // Ensure we have some image URL (cloud URL or fallback to base64)
-      if (!finalImageUrl && uploadedImage) {
-        finalImageUrl = uploadedImage;
-        console.log('🔄 Using base64 image data as fallback');
-      }
+      console.log(
+        '🔄 All images uploaded, processing',
+        finalOrders.length,
+        'orders'
+      );
 
-      // Create order object
-      const order = {
-        customerData: {
-          name: `${orderData.firstName} ${orderData.lastName}`.trim(),
-          email: orderData.email,
-          phone: orderData.phone,
-          address: orderData.address,
-          city: orderData.city,
-          postalCode: orderData.postalCode,
-          paymentMethod: orderData.paymentMethod,
-        },
-        printData: {
-          type: selectedPrintType,
-          size: sizeOptions[selectedSize as keyof typeof sizeOptions].name,
-          frameColor:
-            selectedPrintType === 'framed' ? selectedFrameColor : undefined,
-          price: getCurrentPrice(),
-          imageUrl: finalImageUrl,
-        },
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-      };
+      // Process all orders
+      const totalPrice = finalOrders.reduce(
+        (sum, order) => sum + order.printData.price,
+        0
+      );
 
-      console.log('💾 Saving order to database:', order);
+      console.log(
+        '💾 Processing',
+        finalOrders.length,
+        'orders with total price:',
+        totalPrice
+      );
 
-      // Send order to API
+      // Submit all orders to API
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order),
+        body: JSON.stringify({
+          orders: finalOrders,
+          totalPrice: totalPrice,
+        }),
       });
 
       if (!response.ok) {
@@ -366,10 +479,7 @@ function HomeContent() {
       // Show thank you screen
       setModalStep('thank-you');
 
-      // Clean up the temporary file reference
-      if (window.selectedImageFile) {
-        delete window.selectedImageFile;
-      }
+      // Image URLs are already processed and uploaded
 
       // Trigger confetti celebration
       confetti({
@@ -422,7 +532,7 @@ function HomeContent() {
 
       <Testimonials t={t} />
 
-      <CTASection t={t} openModal={openModal} />
+      <AboutUs t={t} />
 
       <Footer t={t} />
 
@@ -431,17 +541,21 @@ function HomeContent() {
         isModalOpen={isModalOpen}
         modalStep={modalStep}
         closeModal={closeModal}
-        uploadedImage={uploadedImage}
+        cartItems={cartItems}
+        currentImage={currentImage}
         selectedPrintType={selectedPrintType}
         selectedSize={selectedSize}
         selectedFrameColor={selectedFrameColor}
         orderData={orderData}
         isUploading={isUploading}
         uploadError={uploadError}
-        setUploadedImage={setUploadedImage}
+        removeFromCart={removeFromCart}
+        handleAddToCart={handleAddToCart}
         setSelectedPrintType={setSelectedPrintType}
         setSelectedSize={setSelectedSize}
         setSelectedFrameColor={setSelectedFrameColor}
+        quantity={quantity}
+        setQuantity={setQuantity}
         setOrderData={setOrderData}
         handleFileUpload={handleFileUpload}
         handleContinueOrder={handleContinueOrder}
@@ -458,12 +572,16 @@ function HomeContent() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    </div>}>
+    <Suspense
+      fallback={
+        <div className='min-h-screen bg-white flex items-center justify-center'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4'></div>
+            <p className='text-gray-600'>Loading...</p>
+          </div>
+        </div>
+      }
+    >
       <HomeContent />
     </Suspense>
   );

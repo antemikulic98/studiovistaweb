@@ -29,6 +29,8 @@ import {
   Truck,
   ChevronDown,
   ChevronUp,
+  Minus,
+  Plus,
 } from 'lucide-react';
 // No longer need Stripe Elements for checkout flow
 
@@ -440,21 +442,36 @@ function PrintPreview3D({
   );
 }
 
+interface CartItem {
+  id: string;
+  imageFile: File;
+  previewUrl: string;
+  printType: 'canvas' | 'framed' | 'sticker';
+  size: string;
+  frameColor: 'black' | 'silver';
+  quantity: number;
+  price: number;
+}
+
 interface ProductModalProps {
   isModalOpen: boolean;
   modalStep: 'customize' | 'order' | 'thank-you';
   closeModal: () => void;
-  uploadedImage: string | null;
+  cartItems: CartItem[];
+  currentImage: { file: File; previewUrl: string } | null;
   selectedPrintType: 'canvas' | 'framed' | 'sticker';
   selectedSize: string;
   selectedFrameColor: 'black' | 'silver';
+  quantity: number;
   orderData: OrderData;
   isUploading: boolean;
   uploadError: string | null;
-  setUploadedImage: (image: string | null) => void;
+  removeFromCart: (itemId: string) => void;
+  handleAddToCart: () => void;
   setSelectedPrintType: (type: 'canvas' | 'framed' | 'sticker') => void;
   setSelectedSize: (size: string) => void;
   setSelectedFrameColor: (color: 'black' | 'silver') => void;
+  setQuantity: (quantity: number) => void;
   setOrderData: (data: OrderData) => void;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleContinueOrder: () => void;
@@ -478,17 +495,21 @@ export default function ProductModal({
   isModalOpen,
   modalStep,
   closeModal,
-  uploadedImage,
+  cartItems,
+  currentImage,
   selectedPrintType,
   selectedSize,
   selectedFrameColor,
+  quantity,
   orderData,
   isUploading,
   uploadError,
-  setUploadedImage,
+  removeFromCart,
+  handleAddToCart,
   setSelectedPrintType,
   setSelectedSize,
   setSelectedFrameColor,
+  setQuantity,
   setOrderData,
   handleFileUpload,
   handleContinueOrder,
@@ -522,7 +543,8 @@ export default function ProductModal({
           frameColor:
             selectedPrintType === 'framed' ? selectedFrameColor : undefined,
           price: getCurrentPrice(),
-          imageUrl: uploadedImage,
+          quantity: quantity,
+          imageUrls: cartItems.map((item) => item.previewUrl), // Will be replaced with actual URLs during checkout
         },
         status: 'paid', // Stripe payments are immediately paid
       };
@@ -541,14 +563,15 @@ export default function ProductModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: getCurrentPrice(),
+          amount: cartItems.reduce((sum, item) => sum + item.price, 0),
           orderData: orderData,
           printData: {
             type: selectedPrintType,
             size: sizeOptions[selectedSize as keyof typeof sizeOptions].name,
             frameColor:
               selectedPrintType === 'framed' ? selectedFrameColor : undefined,
-            imageUrl: uploadedImage,
+            quantity: quantity,
+            imageUrls: cartItems.map((item) => item.previewUrl), // Will be replaced with actual URLs during checkout
           },
         }),
       });
@@ -587,7 +610,8 @@ export default function ProductModal({
           frameColor:
             selectedPrintType === 'framed' ? selectedFrameColor : undefined,
           price: getCurrentPrice(),
-          imageUrl: uploadedImage,
+          quantity: quantity,
+          imageUrls: cartItems.map((item) => item.previewUrl), // Will be replaced with actual URLs during checkout
         },
         status: 'pending',
         createdAt: new Date().toISOString(),
@@ -624,10 +648,10 @@ export default function ProductModal({
 
   // Auto-progress through steps on mobile
   useEffect(() => {
-    if (uploadedImage && openMobileStep === 1) {
+    if (currentImage && openMobileStep === 1) {
       setOpenMobileStep(2); // Auto-open step 2 when image is uploaded
     }
-  }, [uploadedImage, openMobileStep]);
+  }, [currentImage, openMobileStep]);
 
   if (!isModalOpen) return null;
 
@@ -665,10 +689,12 @@ export default function ProductModal({
                       <h3 className='text-lg font-bold text-gray-900 flex items-center gap-2'>
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-                            uploadedImage ? 'bg-green-600' : 'bg-blue-600'
+                            cartItems.length > 0
+                              ? 'bg-green-600'
+                              : 'bg-blue-600'
                           }`}
                         >
-                          {uploadedImage ? (
+                          {currentImage ? (
                             <svg
                               className='w-4 h-4'
                               fill='currentColor'
@@ -700,12 +726,26 @@ export default function ProductModal({
                         openMobileStep === 1 ? 'block' : 'hidden lg:block'
                       }`}
                     >
-                      {!uploadedImage ? (
+                      {!currentImage ? (
                         <div>
                           <div
-                            onClick={() =>
-                              !isUploading && fileInputRef.current?.click()
-                            }
+                            onClick={() => {
+                              console.log(
+                                '🖱️ Upload area clicked, isUploading:',
+                                isUploading
+                              );
+                              if (!isUploading && fileInputRef.current) {
+                                console.log('🔄 Triggering file input click');
+                                fileInputRef.current.click();
+                              } else {
+                                console.log(
+                                  '❌ File input not triggered - isUploading:',
+                                  isUploading,
+                                  'fileInputRef:',
+                                  fileInputRef.current
+                                );
+                              }
+                            }}
                             className={`border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-colors touch-manipulation ${
                               isUploading
                                 ? 'border-blue-300 bg-blue-50 cursor-not-allowed'
@@ -717,13 +757,14 @@ export default function ProductModal({
                               className='mx-auto text-gray-700 mb-3'
                             />
                             <p className='text-base md:text-lg font-medium text-gray-900 mb-2'>
-                              Dodaj svoju sliku
+                              Dodaj svoje slike
                             </p>
                             <p className='text-sm text-gray-700 font-medium mb-1'>
                               Podržani formati: JPG, PNG, WebP, TIFF, BMP
                             </p>
                             <p className='text-xs text-gray-600'>
-                              Maksimalna veličina: 10MB
+                              Maksimalna veličina: 10MB po slici | Maksimalno 5
+                              slika
                             </p>
                           </div>
 
@@ -736,29 +777,50 @@ export default function ProductModal({
                           )}
                         </div>
                       ) : (
-                        <div className='relative rounded-xl overflow-hidden'>
-                          <Image
-                            src={uploadedImage}
-                            alt='Uploaded'
-                            width={400}
-                            height={200}
-                            className='w-full h-40 md:h-48 object-cover'
-                          />
-                          <div className='absolute top-2 right-2 bg-green-600 text-white px-3 py-1 rounded-lg text-sm font-medium'>
-                            ✓ Slika dodana
+                        <div className='space-y-4'>
+                          {/* Current Image Preview */}
+                          <div className='mb-4'>
+                            <div className='relative rounded-xl overflow-hidden group max-w-xs mx-auto'>
+                              <Image
+                                src={currentImage.previewUrl}
+                                alt='Current image'
+                                width={300}
+                                height={200}
+                                className='w-full h-48 object-cover'
+                              />
+                              <div className='absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity'>
+                                <span className='text-white text-sm font-medium'>
+                                  Klikom promjeni sliku
+                                </span>
+                              </div>
+                            </div>
                           </div>
+
+                          {/* Add to Cart Button */}
                           <button
-                            onClick={() => {
-                              setUploadedImage(null);
-                              setOpenMobileStep(1);
-                              if (fileInputRef.current) {
-                                fileInputRef.current.value = '';
-                              }
-                            }}
-                            className='absolute bottom-2 right-2 bg-white/90 hover:bg-white text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors'
+                            onClick={handleAddToCart}
+                            className='w-full py-3 px-4 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition-colors mb-4'
                           >
-                            Promijeni sliku
+                            🛒 Dodaj u košaricu - €
+                            {getCurrentPrice() * quantity}
                           </button>
+
+                          {/* Upload Different Image */}
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className='w-full py-2 px-4 border border-blue-600 text-blue-600 font-medium rounded-xl hover:bg-blue-50 transition-colors'
+                          >
+                            📷 Odaberi drugu sliku
+                          </button>
+                          {/* Cart Preview */}
+                          {cartItems.length > 0 && (
+                            <div className='bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4'>
+                              <p className='text-sm text-blue-700 font-medium text-center'>
+                                🛒 Košarica: {cartItems.length} proizvod
+                                {cartItems.length > 1 ? 'a' : ''}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       )}
 
@@ -766,6 +828,7 @@ export default function ProductModal({
                         ref={fileInputRef}
                         type='file'
                         accept='image/*'
+                        multiple
                         onChange={handleFileUpload}
                         className='hidden'
                       />
@@ -925,12 +988,45 @@ export default function ProductModal({
                           </div>
                         </div>
                       )}
+
+                      {/* Quantity Selection */}
+                      <div className='mt-4'>
+                        <h4 className='text-sm font-semibold text-gray-800 mb-3'>
+                          Količina
+                        </h4>
+                        <div className='flex items-center justify-center bg-white border border-gray-200 rounded-xl p-2 max-w-[140px]'>
+                          <button
+                            onClick={() =>
+                              setQuantity(Math.max(1, quantity - 1))
+                            }
+                            disabled={quantity <= 1}
+                            className='flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                          >
+                            <Minus size={16} className='text-gray-600' />
+                          </button>
+                          <span className='mx-4 min-w-[2rem] text-center font-semibold text-gray-900'>
+                            {quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              setQuantity(Math.min(10, quantity + 1))
+                            }
+                            disabled={quantity >= 10}
+                            className='flex items-center justify-center w-8 h-8 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                          >
+                            <Plus size={16} className='text-gray-600' />
+                          </button>
+                        </div>
+                        <p className='text-xs text-gray-500 mt-2'>
+                          Maksimalno 10 primjeraka po narudžbi
+                        </p>
+                      </div>
                     </div>
                   </div>
 
                   {/* Step 3: Preview (Accordion - Mobile Only) */}
                   <div className='lg:hidden'>
-                    {uploadedImage && (
+                    {cartItems.length > 0 && (
                       <div className='bg-gray-50 rounded-2xl overflow-hidden'>
                         <button
                           onClick={() => setOpenMobileStep(3)}
@@ -939,12 +1035,12 @@ export default function ProductModal({
                           <div className='flex items-center gap-2'>
                             <div
                               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-                                uploadedImage && openMobileStep >= 3
+                                cartItems.length > 0 && openMobileStep >= 3
                                   ? 'bg-green-600'
                                   : 'bg-blue-600'
                               }`}
                             >
-                              {uploadedImage && openMobileStep >= 3 ? (
+                              {cartItems.length > 0 && openMobileStep >= 3 ? (
                                 <svg
                                   className='w-4 h-4'
                                   fill='currentColor'
@@ -976,7 +1072,9 @@ export default function ProductModal({
                             <div className='p-4 md:p-6'>
                               <div className='relative h-64 md:h-80 rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 shadow-inner'>
                                 <PrintPreview3D
-                                  imageUrl={uploadedImage}
+                                  imageUrl={
+                                    currentImage ? currentImage.previewUrl : ''
+                                  }
                                   printType={selectedPrintType}
                                   dimensions={getCurrentDimensions()}
                                   frameColor={selectedFrameColor}
@@ -1005,10 +1103,10 @@ export default function ProductModal({
                   <div className='flex items-center gap-2 mb-4'>
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white ${
-                        uploadedImage ? 'bg-green-600' : 'bg-blue-600'
+                        cartItems.length > 0 ? 'bg-green-600' : 'bg-blue-600'
                       }`}
                     >
-                      {uploadedImage ? (
+                      {cartItems.length > 0 ? (
                         <svg
                           className='w-4 h-4'
                           fill='currentColor'
@@ -1030,9 +1128,9 @@ export default function ProductModal({
                   </div>
 
                   <div className='flex-1 rounded-2xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 shadow-inner'>
-                    {uploadedImage ? (
+                    {cartItems.length > 0 ? (
                       <PrintPreview3D
-                        imageUrl={uploadedImage}
+                        imageUrl={currentImage ? currentImage.previewUrl : ''}
                         printType={selectedPrintType}
                         dimensions={getCurrentDimensions()}
                         frameColor={selectedFrameColor}
@@ -1052,7 +1150,7 @@ export default function ProductModal({
                     )}
                   </div>
 
-                  {uploadedImage && (
+                  {cartItems.length > 0 && (
                     <div className='mt-4 text-center'>
                       <p className='text-sm text-gray-600'>
                         Povuci i zavrti za pregled sa svih strana
@@ -1152,7 +1250,12 @@ export default function ProductModal({
                       <div className='flex justify-between pt-3 border-t border-gray-300'>
                         <span className='font-bold text-gray-900'>Ukupno</span>
                         <span className='font-bold text-lg lg:text-xl text-green-600'>
-                          €{getCurrentPrice()}
+                          €
+                          {(
+                            getCurrentPrice() *
+                            quantity *
+                            cartItems.length
+                          ).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -1772,11 +1875,11 @@ export default function ProductModal({
 
                       {openOrderStep === 2 && (
                         <div className='border-t border-gray-200 bg-white p-4 md:p-6'>
-                          {uploadedImage && (
+                          {currentImage && (
                             <div className='bg-white rounded-xl p-6 mb-6 shadow-sm'>
                               <div className='flex items-center gap-4 mb-4'>
                                 <Image
-                                  src={uploadedImage}
+                                  src={cartItems[0]?.previewUrl || ''}
                                   alt='Preview'
                                   width={64}
                                   height={64}
@@ -1806,8 +1909,21 @@ export default function ProductModal({
                                 <div className='flex justify-between text-sm text-gray-800'>
                                   <span>Cijena proizvoda:</span>
                                   <span className='font-semibold text-gray-900'>
-                                    €{getCurrentPrice()}
+                                    €
+                                    {(
+                                      getCurrentPrice() *
+                                      quantity *
+                                      cartItems.length
+                                    ).toFixed(2)}
                                   </span>
+                                  {(quantity > 1 || cartItems.length > 1) && (
+                                    <div className='text-xs text-gray-500'>
+                                      €{getCurrentPrice()} × {quantity}
+                                      {cartItems.length > 1
+                                        ? ` × ${cartItems.length} slika`
+                                        : ''}
+                                    </div>
+                                  )}
                                 </div>
                                 <div className='flex justify-between text-sm text-gray-800'>
                                   <span>Dostava:</span>
@@ -1817,7 +1933,9 @@ export default function ProductModal({
                                 </div>
                                 <div className='flex justify-between font-bold text-lg pt-2 border-t text-gray-900'>
                                   <span>Ukupno:</span>
-                                  <span>€{getCurrentPrice()}</span>
+                                  <span>
+                                    €{(getCurrentPrice() * quantity).toFixed(2)}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -1871,11 +1989,11 @@ export default function ProductModal({
                   </div>
 
                   <div className='flex-1 space-y-6'>
-                    {uploadedImage && (
+                    {cartItems.length > 0 && (
                       <div className='bg-white rounded-xl p-6 shadow-sm'>
                         <div className='flex items-center gap-4 mb-4'>
                           <Image
-                            src={uploadedImage}
+                            src={cartItems[0]?.previewUrl || ''}
                             alt='Preview'
                             width={64}
                             height={64}
@@ -1905,8 +2023,21 @@ export default function ProductModal({
                           <div className='flex justify-between text-sm text-gray-800'>
                             <span>Cijena proizvoda:</span>
                             <span className='font-semibold text-gray-900'>
-                              €{getCurrentPrice()}
+                              €
+                              {(
+                                getCurrentPrice() *
+                                quantity *
+                                cartItems.length
+                              ).toFixed(2)}
                             </span>
+                            {(quantity > 1 || cartItems.length > 1) && (
+                              <div className='text-xs text-gray-500'>
+                                €{getCurrentPrice()} × {quantity}
+                                {cartItems.length > 1
+                                  ? ` × ${cartItems.length} slika`
+                                  : ''}
+                              </div>
+                            )}
                           </div>
                           <div className='flex justify-between text-sm text-gray-800'>
                             <span>Dostava:</span>
@@ -1916,7 +2047,9 @@ export default function ProductModal({
                           </div>
                           <div className='flex justify-between font-bold text-lg pt-2 border-t text-gray-900'>
                             <span>Ukupno:</span>
-                            <span>€{getCurrentPrice()}</span>
+                            <span>
+                              €{(getCurrentPrice() * quantity).toFixed(2)}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1961,13 +2094,27 @@ export default function ProductModal({
               <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between lg:gap-6 gap-4'>
                 {/* Price Info */}
                 <div className='flex-1 lg:flex lg:items-center lg:gap-4'>
-                  {uploadedImage ? (
+                  {cartItems.length > 0 ? (
                     <div className='bg-gray-50 lg:bg-transparent rounded-xl p-4 lg:p-0 lg:flex lg:items-center lg:gap-4'>
                       <div className='flex justify-between lg:justify-start lg:gap-2 items-center mb-2 lg:mb-0'>
                         <span className='text-sm text-gray-600'>Cijena:</span>
                         <span className='text-2xl lg:text-xl font-bold text-gray-900'>
-                          €{getCurrentPrice()}
+                          €
+                          {(
+                            getCurrentPrice() *
+                            quantity *
+                            cartItems.length
+                          ).toFixed(2)}
                         </span>
+                        {(quantity > 1 || cartItems.length > 1) && (
+                          <span className='text-sm text-gray-600 ml-2'>
+                            (€{getCurrentPrice()} × {quantity}
+                            {cartItems.length > 1
+                              ? ` × ${cartItems.length} slika`
+                              : ''}
+                            )
+                          </span>
+                        )}
                       </div>
                       <div className='flex justify-between lg:justify-start lg:gap-4 items-center text-sm text-gray-600'>
                         <span>
@@ -2006,7 +2153,7 @@ export default function ProductModal({
                   </button>
                   <button
                     onClick={handleContinueOrder}
-                    disabled={!uploadedImage}
+                    disabled={cartItems.length === 0}
                     className='flex-1 lg:flex-initial px-6 py-4 lg:py-2 lg:px-4 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation lg:whitespace-nowrap'
                   >
                     Nastavi narudžbu

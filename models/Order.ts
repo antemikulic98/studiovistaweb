@@ -18,7 +18,13 @@ export interface IOrder extends Document {
     price: number;
     imageUrl?: string;
   };
-  status: 'pending' | 'paid' | 'processing' | 'completed' | 'shipped' | 'cancelled';
+  status:
+    | 'pending'
+    | 'paid'
+    | 'processing'
+    | 'completed'
+    | 'shipped'
+    | 'cancelled';
   trackingId?: string;
   stripeSessionId?: string;
   createdAt: Date;

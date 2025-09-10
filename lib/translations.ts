@@ -139,6 +139,39 @@ const translations = {
         supported: 'JPG, PNG, TIFF, RAW',
       },
     },
+    about: {
+      badge: 'O nama',
+      title: 'Naša priča',
+      subtitle: '30 godina iskustva u printanju',
+      story:
+        'Studio Vista je obiteljska tvrtka koja već tri desetljeća s ljubavlju i predanošću stvara nezaboravne trenutke na platnu. Naša priča počinje 1994. godine, kada smo sa skromnom opremom i velikim snovima krenuli pretvarati digitalne uspomene u prekrasne fizičke umjetnine. Danas, nakon 30 godina rada, ponosno surađujemo s galerijama, profesionalnim fotografima i tisućama obitelji koje su nam povjerile svoje najdragocjenije trenutke.',
+      experience:
+        'Svaki dan donosimo nešto novo - od nježnih obiteljskih portreta koji krase dnevne sobe, do velikih komercijalnih radova koji ostavljaju dojam. Naša tajna leži u spoju tradicionalnog majstorstva i najsuvremenije tehnologije. Jer vjerujemo da svaka fotografija krije priču koja zaslužuje biti ispričana na najljepši mogući način. Mi smo tu da vašu priču učinimo vječnom.',
+      company: {
+        title: 'Podaci o tvrtki',
+        name: 'Studio Vista d.o.o.',
+        address: 'T.P. Marović 3, 21000 Split, Hrvatska',
+        oib: 'OIB: 12345678901',
+        iban: 'IBAN: HR1234567890123456789',
+        email: 'info@studiovista.hr',
+        phone: '+385 21 123 456',
+      },
+      contact: {
+        title: 'Kontaktirajte nas',
+        subtitle: 'Imate pitanja? Javite nam se!',
+        form: {
+          firstName: 'Ime',
+          lastName: 'Prezime',
+          email: 'Email adresa',
+          phone: 'Broj telefona',
+          message: 'Poruka',
+          send: 'Pošaljite poruku',
+          sending: 'Šalje se...',
+          success: 'Poruka je uspješno poslana!',
+          error: 'Greška pri slanju poruke. Pokušajte ponovno.',
+        },
+      },
+    },
     testimonials: {
       badge: 'Priče kupaca',
       title: 'Što kažu naši',
@@ -146,13 +179,40 @@ const translations = {
       customers: 'Zadovoljni kupci',
       description:
         'Pridružite se tisućama zadovoljnih kupaca koji su transformirali svoje prostore našim premium printovima.',
-      cta: {
-        title: 'Transformirajte svoje prostore još danas',
-        subtitle:
-          'Pridružite se tisućama kupaca koji su transformirali svoje prostore. Uploadajte svoju fotografiju danas i vidite čarobnost na djelu.',
-        ready: 'Spremni za početak?',
-        pricing: 'Pogledaj cijene',
-      },
+      verifiedPurchase: 'Potvrđena kupovina',
+      averageRating: 'Prosječna ocjena',
+      reviews: [
+        {
+          stars: '★★★★★',
+          quote:
+            'Kvaliteta me oduševila! Canvas print naše vjenčane fotografije postao je glavni ukras dnevnog boravka. Boje su tako živopisne i vjerodostojne.',
+          name: 'Marija Horvat',
+          profession: 'Arhitektka',
+          location: 'Zagreb, Hrvatska',
+          initial: 'M',
+          bgColor: 'bg-blue-600',
+        },
+        {
+          stars: '★★★★★',
+          quote:
+            'Naručila sam tri uokvirena printa za ured. Postupak je bio jednostavan, dostava super brza, a kvaliteta je apsolutno profesionalna.',
+          name: 'Petra Babić',
+          profession: 'Vlasnica tvrtke',
+          location: 'Split, Hrvatska',
+          initial: 'P',
+          bgColor: 'bg-green-600',
+        },
+        {
+          stars: '★★★★★',
+          quote:
+            'Kao kolektor umjetnosti, vrlo sam zahtjevan po pitanju kvalitete. Studio Vista je premašio moja očekivanja s okvirenjem i pažnjom prema detaljima.',
+          name: 'Ana Kovačević',
+          profession: 'Kolekcionar umjetnosti',
+          location: 'Rijeka, Hrvatska',
+          initial: 'A',
+          bgColor: 'bg-purple-600',
+        },
+      ],
       stats: {
         satisfactionRate: 'Zadovoljstvo korisnika',
         supportAvailable: 'Podrška dostupna',
@@ -163,9 +223,9 @@ const translations = {
         'Stvaramo premium canvas printove i okvire po mjeri koji pretvaraju vaše uspomene u vrhunsnu zidnu umjetnost.',
       products: {
         title: 'Proizvodi',
-        canvas: 'Canvas printovi',
-        framed: 'Uokvireni printovi',
-        stickers: 'Zidni stickeri',
+        canvas: 'Canvas',
+        framed: 'Uokvirene slike',
+        stickers: 'Zidne naljepnice',
       },
       contact: {
         title: 'Stupite u kontakt',
@@ -349,16 +409,76 @@ const translations = {
       customers: 'Happy Customers',
       description:
         "Join thousands of happy customers who've transformed their spaces with our premium prints.",
-      cta: {
-        title: 'Transform Your Space Today',
-        subtitle:
-          "Join thousands of customers who've transformed their spaces. Upload your photo today and see the magic happen.",
-        ready: 'Ready to Start?',
-        pricing: 'View Pricing',
-      },
+      verifiedPurchase: 'Verified Purchase',
+      averageRating: 'Average Rating',
+      reviews: [
+        {
+          stars: '★★★★★',
+          quote:
+            'Kvaliteta me oduševila! Canvas print naše vjenčane fotografije postao je glavni ukras dnevnog boravka. Boje su tako živopisne i vjerodostojne.',
+          name: 'Marija Horvat',
+          profession: 'Architect',
+          location: 'Zagreb, Croatia',
+          initial: 'M',
+          bgColor: 'bg-blue-600',
+        },
+        {
+          stars: '★★★★★',
+          quote:
+            'Naručila sam tri uokvirena printa za ured. Postupak je bio jednostavan, dostava super brza, a kvaliteta je apsolutno profesionalna.',
+          name: 'Petra Babić',
+          profession: 'Business Owner',
+          location: 'Split, Croatia',
+          initial: 'P',
+          bgColor: 'bg-green-600',
+        },
+        {
+          stars: '★★★★★',
+          quote:
+            'Kao kolektor umjetnosti, vrlo sam zahtjevan po pitanju kvalitete. Studio Vista je premašio moja očekivanja s okvirenjem i pažnjom prema detaljima.',
+          name: 'Ana Kovačević',
+          profession: 'Art Collector',
+          location: 'Rijeka, Croatia',
+          initial: 'A',
+          bgColor: 'bg-purple-600',
+        },
+      ],
       stats: {
-        satisfactionRate: 'Satisfaction Rate',
-        supportAvailable: 'Support Available',
+        satisfactionRate: 'Zadovoljstvo korisnika',
+        supportAvailable: 'Podrška dostupna',
+      },
+    },
+    about: {
+      badge: 'About Us',
+      title: 'Our Story',
+      subtitle: '30 years of printing experience',
+      story:
+        'Studio Vista is a family business that has lovingly crafted unforgettable moments on canvas for three decades. Our story began in 1994, when we started with humble equipment and big dreams, transforming digital memories into beautiful physical masterpieces. Today, after 30 years of dedicated work, we proudly collaborate with galleries, professional photographers, and thousands of families who have trusted us with their most precious moments.',
+      experience:
+        'Every day brings something new - from tender family portraits that grace living rooms, to large commercial works that leave lasting impressions. Our secret lies in combining traditional craftsmanship with cutting-edge technology. Because we believe every photograph holds a story that deserves to be told in the most beautiful way possible. We are here to make your story eternal.',
+      company: {
+        title: 'Company Details',
+        name: 'Studio Vista Ltd.',
+        address: 'T.P. Marović 3, 21000 Split, Croatia',
+        oib: 'VAT: 12345678901',
+        iban: 'IBAN: HR1234567890123456789',
+        email: 'info@studiovista.hr',
+        phone: '+385 21 123 456',
+      },
+      contact: {
+        title: 'Contact Us',
+        subtitle: 'Have questions? Get in touch!',
+        form: {
+          firstName: 'First Name',
+          lastName: 'Last Name',
+          email: 'Email Address',
+          phone: 'Phone Number',
+          message: 'Message',
+          send: 'Send Message',
+          sending: 'Sending...',
+          success: 'Message sent successfully!',
+          error: 'Error sending message. Please try again.',
+        },
       },
     },
     footer: {
@@ -366,8 +486,8 @@ const translations = {
         'Crafting premium canvas prints and custom framing that transforms your memories into museum-quality wall art.',
       products: {
         title: 'Products',
-        canvas: 'Canvas Prints',
-        framed: 'Framed Prints',
+        canvas: 'Canvas',
+        framed: 'Framed Pictures',
         stickers: 'Wall Stickers',
       },
       contact: {

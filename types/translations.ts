@@ -135,21 +135,57 @@ export interface Translations {
       };
     };
   };
+  about: {
+    badge: string;
+    title: string;
+    subtitle: string;
+    story: string;
+    experience: string;
+    company: {
+      title: string;
+      name: string;
+      address: string;
+      oib: string;
+      iban: string;
+      email: string;
+      phone: string;
+    };
+    contact: {
+      title: string;
+      subtitle: string;
+      form: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        phone: string;
+        message: string;
+        send: string;
+        sending: string;
+        success: string;
+        error: string;
+      };
+    };
+  };
   testimonials: {
     badge: string;
     title: string;
     subtitle: string;
     description: string;
     customers: string;
+    verifiedPurchase: string;
+    averageRating: string;
+    reviews: Array<{
+      stars: string;
+      quote: string;
+      name: string;
+      profession: string;
+      location: string;
+      initial: string;
+      bgColor: string;
+    }>;
     stats: {
       satisfactionRate: string;
       supportAvailable: string;
-    };
-    cta: {
-      ready: string;
-      title: string;
-      subtitle: string;
-      pricing: string;
     };
   };
   footer: {
@@ -157,6 +193,7 @@ export interface Translations {
     products: {
       title: string;
       canvas: string;
+      framed: string;
       stickers: string;
     };
     contact: {

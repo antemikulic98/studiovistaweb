@@ -3,12 +3,21 @@ import { uploadToSpaces } from '../../../lib/spaces';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📥 Upload API called');
+
     // Get form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const printSize = formData.get('printSize') as string;
 
+    console.log('📁 File details:', {
+      name: file?.name,
+      type: file?.type,
+      size: file?.size,
+    });
+
     if (!file) {
+      console.log('❌ No file provided');
       return NextResponse.json(
         { success: false, error: 'Datoteka nije odabrana' },
         { status: 400 }
@@ -45,6 +54,8 @@ export async function POST(request: NextRequest) {
         // For now, we'll skip this validation and implement it later
       }
 
+      console.log('☁️ Uploading to DigitalOcean Spaces...');
+
       // Upload to DigitalOcean Spaces
       const uploadResult = await uploadToSpaces(
         buffer,
@@ -53,7 +64,10 @@ export async function POST(request: NextRequest) {
         'print-uploads'
       );
 
+      console.log('📤 Upload result:', uploadResult);
+
       if (!uploadResult.success) {
+        console.log('❌ Spaces upload failed:', uploadResult.error);
         return NextResponse.json(
           { success: false, error: uploadResult.error },
           { status: 500 }
