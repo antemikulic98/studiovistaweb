@@ -32,6 +32,7 @@ import {
   Minus,
   Plus,
 } from 'lucide-react';
+import CartSummary from './CartSummary';
 // No longer need Stripe Elements for checkout flow
 
 // Removed unused translations - success step is now handled directly in Croatian
@@ -796,31 +797,13 @@ export default function ProductModal({
                             </div>
                           </div>
 
-                          {/* Add to Cart Button */}
-                          <button
-                            onClick={handleAddToCart}
-                            className='w-full py-3 px-4 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition-colors mb-4'
-                          >
-                            🛒 Dodaj u košaricu - €
-                            {getCurrentPrice() * quantity}
-                          </button>
-
                           {/* Upload Different Image */}
                           <button
                             onClick={() => fileInputRef.current?.click()}
-                            className='w-full py-2 px-4 border border-blue-600 text-blue-600 font-medium rounded-xl hover:bg-blue-50 transition-colors'
+                            className='w-full py-2 px-4 border border-blue-600 text-blue-600 font-medium rounded-xl hover:bg-blue-50 transition-colors mb-4'
                           >
-                            📷 Odaberi drugu sliku
+                            📷 Promijeni sliku
                           </button>
-                          {/* Cart Preview */}
-                          {cartItems.length > 0 && (
-                            <div className='bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4'>
-                              <p className='text-sm text-blue-700 font-medium text-center'>
-                                🛒 Košarica: {cartItems.length} proizvod
-                                {cartItems.length > 1 ? 'a' : ''}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       )}
 
@@ -1020,6 +1003,37 @@ export default function ProductModal({
                         <p className='text-xs text-gray-500 mt-2'>
                           Maksimalno 10 primjeraka po narudžbi
                         </p>
+                      </div>
+
+                      {/* Add to Cart Button - After all configuration */}
+                      <div className='mt-6 pt-4 border-t border-gray-100'>
+                        <button
+                          onClick={handleAddToCart}
+                          className='w-full py-4 px-6 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200'
+                        >
+                          <span className='flex items-center justify-center gap-2'>
+                            <span className='text-lg'>🛒</span>
+                            <span>Dodaj u košaricu</span>
+                            <span className='bg-green-800 px-2 py-1 rounded-lg text-sm font-bold'>
+                              €{(getCurrentPrice() * quantity).toFixed(2)}
+                            </span>
+                          </span>
+                        </button>
+
+                        {cartItems.length > 0 && (
+                          <div className='mt-3 text-center'>
+                            <p className='text-sm text-gray-600'>
+                              🛒 Košarica: {cartItems.length} proizvod
+                              {cartItems.length > 1 ? 'a' : ''} •
+                              <span className='font-bold text-green-600 ml-1'>
+                                €
+                                {cartItems
+                                  .reduce((sum, item) => sum + item.price, 0)
+                                  .toFixed(2)}
+                              </span>
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1863,7 +1877,7 @@ export default function ProductModal({
                             2
                           </div>
                           <h3 className='text-lg font-bold text-gray-900'>
-                            Sažetak narudžbe
+                            Stavke narudžbe
                           </h3>
                         </div>
                         {openOrderStep === 2 ? (
@@ -1875,97 +1889,12 @@ export default function ProductModal({
 
                       {openOrderStep === 2 && (
                         <div className='border-t border-gray-200 bg-white p-4 md:p-6'>
-                          {currentImage && (
-                            <div className='bg-white rounded-xl p-6 mb-6 shadow-sm'>
-                              <div className='flex items-center gap-4 mb-4'>
-                                <Image
-                                  src={cartItems[0]?.previewUrl || ''}
-                                  alt='Preview'
-                                  width={64}
-                                  height={64}
-                                  className='w-16 h-16 rounded-lg object-cover'
-                                />
-                                <div>
-                                  <h4 className='font-semibold text-gray-900'>
-                                    {selectedPrintType === 'canvas'
-                                      ? 'Canvas Print'
-                                      : selectedPrintType === 'framed'
-                                      ? 'Uokvireni Print'
-                                      : 'Zidni Sticker'}
-                                  </h4>
-                                  <p className='text-sm text-gray-700'>
-                                    {sizeOptions[selectedSize]?.name}
-                                    {selectedPrintType === 'framed' &&
-                                      ` • ${
-                                        selectedFrameColor === 'black'
-                                          ? 'Crni'
-                                          : 'Srebrni'
-                                      } okvir`}
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className='border-t pt-4 space-y-2'>
-                                <div className='flex justify-between text-sm text-gray-800'>
-                                  <span>Cijena proizvoda:</span>
-                                  <span className='font-semibold text-gray-900'>
-                                    €
-                                    {(
-                                      getCurrentPrice() *
-                                      quantity *
-                                      cartItems.length
-                                    ).toFixed(2)}
-                                  </span>
-                                  {(quantity > 1 || cartItems.length > 1) && (
-                                    <div className='text-xs text-gray-500'>
-                                      €{getCurrentPrice()} × {quantity}
-                                      {cartItems.length > 1
-                                        ? ` × ${cartItems.length} slika`
-                                        : ''}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className='flex justify-between text-sm text-gray-800'>
-                                  <span>Dostava:</span>
-                                  <span className='text-green-600 font-medium'>
-                                    Besplatno
-                                  </span>
-                                </div>
-                                <div className='flex justify-between font-bold text-lg pt-2 border-t text-gray-900'>
-                                  <span>Ukupno:</span>
-                                  <span>
-                                    €{(getCurrentPrice() * quantity).toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className='bg-white rounded-xl p-6 shadow-sm'>
-                            <h4 className='font-bold text-gray-900 mb-4'>
-                              Informacije o dostavi
-                            </h4>
-                            <div className='space-y-2 text-sm text-gray-700'>
-                              <p className='flex items-center gap-2'>
-                                <Truck size={16} className='text-blue-600' />
-                                Dostava{' '}
-                                {selectedPrintType === 'framed'
-                                  ? '5-7'
-                                  : selectedPrintType === 'sticker'
-                                  ? '2-3'
-                                  : '3-5'}{' '}
-                                radnih dana
-                              </p>
-                              <p className='flex items-center gap-2'>
-                                <Shield size={16} className='text-green-600' />
-                                100% zadovoljstvo ili povrat novca
-                              </p>
-                              <p className='flex items-center gap-2'>
-                                <Award size={16} className='text-purple-600' />
-                                Premium kvaliteta materijala
-                              </p>
-                            </div>
-                          </div>
+                          <CartSummary
+                            cartItems={cartItems}
+                            removeFromCart={removeFromCart}
+                            sizeOptions={sizeOptions}
+                            compact
+                          />
                         </div>
                       )}
                     </div>
@@ -1989,97 +1918,11 @@ export default function ProductModal({
                   </div>
 
                   <div className='flex-1 space-y-6'>
-                    {cartItems.length > 0 && (
-                      <div className='bg-white rounded-xl p-6 shadow-sm'>
-                        <div className='flex items-center gap-4 mb-4'>
-                          <Image
-                            src={cartItems[0]?.previewUrl || ''}
-                            alt='Preview'
-                            width={64}
-                            height={64}
-                            className='w-16 h-16 rounded-lg object-cover'
-                          />
-                          <div>
-                            <h4 className='font-semibold text-gray-900'>
-                              {selectedPrintType === 'canvas'
-                                ? 'Canvas Print'
-                                : selectedPrintType === 'framed'
-                                ? 'Uokvireni Print'
-                                : 'Zidni Sticker'}
-                            </h4>
-                            <p className='text-sm text-gray-700'>
-                              {sizeOptions[selectedSize]?.name}
-                              {selectedPrintType === 'framed' &&
-                                ` • ${
-                                  selectedFrameColor === 'black'
-                                    ? 'Crni'
-                                    : 'Srebrni'
-                                } okvir`}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className='border-t pt-4 space-y-2'>
-                          <div className='flex justify-between text-sm text-gray-800'>
-                            <span>Cijena proizvoda:</span>
-                            <span className='font-semibold text-gray-900'>
-                              €
-                              {(
-                                getCurrentPrice() *
-                                quantity *
-                                cartItems.length
-                              ).toFixed(2)}
-                            </span>
-                            {(quantity > 1 || cartItems.length > 1) && (
-                              <div className='text-xs text-gray-500'>
-                                €{getCurrentPrice()} × {quantity}
-                                {cartItems.length > 1
-                                  ? ` × ${cartItems.length} slika`
-                                  : ''}
-                              </div>
-                            )}
-                          </div>
-                          <div className='flex justify-between text-sm text-gray-800'>
-                            <span>Dostava:</span>
-                            <span className='text-green-600 font-medium'>
-                              Besplatno
-                            </span>
-                          </div>
-                          <div className='flex justify-between font-bold text-lg pt-2 border-t text-gray-900'>
-                            <span>Ukupno:</span>
-                            <span>
-                              €{(getCurrentPrice() * quantity).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className='bg-white rounded-xl p-6 shadow-sm'>
-                      <h4 className='font-bold text-gray-900 mb-4'>
-                        Informacije o dostavi
-                      </h4>
-                      <div className='space-y-2 text-sm text-gray-700'>
-                        <p className='flex items-center gap-2'>
-                          <Truck size={16} className='text-blue-600' />
-                          Dostava{' '}
-                          {selectedPrintType === 'framed'
-                            ? '5-7'
-                            : selectedPrintType === 'sticker'
-                            ? '2-3'
-                            : '3-5'}{' '}
-                          radnih dana
-                        </p>
-                        <p className='flex items-center gap-2'>
-                          <Shield size={16} className='text-green-600' />
-                          100% zadovoljstvo ili povrat novca
-                        </p>
-                        <p className='flex items-center gap-2'>
-                          <Award size={16} className='text-purple-600' />
-                          Premium kvaliteta materijala
-                        </p>
-                      </div>
-                    </div>
+                    <CartSummary
+                      cartItems={cartItems}
+                      removeFromCart={removeFromCart}
+                      sizeOptions={sizeOptions}
+                    />
                   </div>
                 </div>
               </div>
