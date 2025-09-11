@@ -10,6 +10,7 @@ interface OrderData {
   postalCode: string;
   paymentMethod: 'stripe' | 'cod' | 'bank';
   specialInstructions?: string;
+  promoCode?: string;
 }
 
 import Image from 'next/image';
@@ -495,6 +496,11 @@ interface ProductModalProps {
       dimensions: { width: number; height: number };
     };
   };
+  completedOrder: {
+    id: string;
+    total: number;
+    items: CartItem[];
+  } | null;
 }
 
 export default function ProductModal({
@@ -525,13 +531,36 @@ export default function ProductModal({
   getCurrentDimensions,
   fileInputRef,
   sizeOptions,
+  completedOrder,
 }: ProductModalProps) {
   const [openMobileStep, setOpenMobileStep] = useState<1 | 2 | 3>(1);
   const [openOrderStep, setOpenOrderStep] = useState<1 | 2>(1);
 
+  // Helper function to find size key by name or return the size as-is
+  const findSizeKey = (sizeValue: string) => {
+    // If sizeValue is already a valid key, return it
+    if (sizeOptions[sizeValue as keyof typeof sizeOptions]) {
+      return sizeValue;
+    }
+
+    // If sizeValue is a name like "40x30cm", find the corresponding key
+    const foundKey = Object.keys(sizeOptions).find(
+      (key) => sizeOptions[key as keyof typeof sizeOptions].name === sizeValue
+    );
+
+    return foundKey || sizeValue;
+  };
+
   // Handle Stripe Checkout redirect
   const handleStripeCheckout = async () => {
     try {
+      // Calculate total from cart items
+      const subtotal = cartItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+      const total = subtotal * 1.25; // Including 25% VAT
+
       // Store order data in localStorage before redirecting to Stripe
       const orderDataForStripe = {
         customerData: {
@@ -544,12 +573,18 @@ export default function ProductModal({
           paymentMethod: 'stripe' as const,
         },
         printData: {
-          type: selectedPrintType,
-          size: sizeOptions[selectedSize as keyof typeof sizeOptions].name,
-          frameColor:
-            selectedPrintType === 'framed' ? selectedFrameColor : undefined,
-          price: getCurrentPrice(),
-          quantity: quantity,
+          items: cartItems.map((item) => {
+            const sizeKey = findSizeKey(item.size);
+            return {
+              type: item.printType,
+              size: sizeKey, // Store the key, not the display name
+              frameColor:
+                item.printType === 'framed' ? item.frameColor : undefined,
+              price: item.price,
+              quantity: item.quantity,
+            };
+          }),
+          totalPrice: total,
           imageUrls: cartItems.map((item) => item.previewUrl), // Will be replaced with actual URLs during checkout
         },
         status: 'paid', // Stripe payments are immediately paid
@@ -561,7 +596,55 @@ export default function ProductModal({
         JSON.stringify(orderDataForStripe)
       );
 
+      // Store cart items backup for later upload (can't store File objects, so store basic info)
+      const cartBackup = cartItems.map((item) => ({
+        id: item.id,
+        printType: item.printType,
+        size: item.size,
+        frameColor: item.frameColor,
+        quantity: item.quantity,
+        price: item.price,
+        fileName: item.imageFile?.name,
+        fileType: item.imageFile?.type,
+        fileSize: item.imageFile?.size,
+        previewUrl: item.previewUrl, // This will be blob: URL
+      }));
+
+      localStorage.setItem('cartBackup', JSON.stringify(cartBackup));
+
+      // Store File objects as base64 in localStorage for reliable Stripe upload
+      const cartFilesBackup = await Promise.all(
+        cartItems.map(async (item) => {
+          // Convert File to base64
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(item.imageFile);
+          });
+
+          return {
+            id: item.id,
+            fileName: item.imageFile.name,
+            fileType: item.imageFile.type,
+            fileSize: item.imageFile.size,
+            base64Data: base64, // This contains the actual file data
+            printType: item.printType,
+            size: item.size,
+            frameColor: item.frameColor,
+            quantity: item.quantity,
+            price: item.price,
+          };
+        })
+      );
+
+      localStorage.setItem('stripeCartFiles', JSON.stringify(cartFilesBackup));
+
       console.log('💾 Stored order data for Stripe:', orderDataForStripe);
+      console.log('💾 Stored cart backup:', cartBackup);
+      console.log(
+        '💾 Stored cart files backup in localStorage:',
+        cartFilesBackup.length + ' files'
+      );
 
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -569,15 +652,21 @@ export default function ProductModal({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: cartItems.reduce((sum, item) => sum + item.price, 0),
+          amount: total,
           orderData: orderData,
           printData: {
-            type: selectedPrintType,
-            size: sizeOptions[selectedSize as keyof typeof sizeOptions].name,
+            type: cartItems[0]?.printType || 'canvas',
+            size: cartItems[0]
+              ? sizeOptions[
+                  findSizeKey(cartItems[0].size) as keyof typeof sizeOptions
+                ]?.name || cartItems[0].size
+              : '',
             frameColor:
-              selectedPrintType === 'framed' ? selectedFrameColor : undefined,
-            quantity: quantity,
-            imageUrls: cartItems.map((item) => item.previewUrl), // Will be replaced with actual URLs during checkout
+              cartItems[0]?.printType === 'framed'
+                ? cartItems[0]?.frameColor
+                : undefined,
+            quantity: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+            imageUrls: cartItems.map((item) => item.previewUrl),
           },
         }),
       });
@@ -599,6 +688,13 @@ export default function ProductModal({
   // Non-Stripe order submission
   const submitOrder = async () => {
     try {
+      // Calculate total from cart items
+      const subtotal = cartItems.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0
+      );
+      const total = subtotal * 1.25; // Including 25% VAT
+
       // Create order object for non-Stripe payments
       const order = {
         customerData: {
@@ -611,12 +707,18 @@ export default function ProductModal({
           paymentMethod: orderData.paymentMethod,
         },
         printData: {
-          type: selectedPrintType,
-          size: sizeOptions[selectedSize as keyof typeof sizeOptions].name,
-          frameColor:
-            selectedPrintType === 'framed' ? selectedFrameColor : undefined,
-          price: getCurrentPrice(),
-          quantity: quantity,
+          items: cartItems.map((item) => {
+            const sizeKey = findSizeKey(item.size);
+            return {
+              type: item.printType,
+              size: sizeKey, // Store the key, not the display name
+              frameColor:
+                item.printType === 'framed' ? item.frameColor : undefined,
+              price: item.price,
+              quantity: item.quantity,
+            };
+          }),
+          totalPrice: total,
           imageUrls: cartItems.map((item) => item.previewUrl), // Will be replaced with actual URLs during checkout
         },
         status: 'pending',
@@ -965,13 +1067,15 @@ export default function ProductModal({
                                 {option.name}
                               </div>
                               <div className='text-lg font-bold mt-1'>
+                                €
                                 {selectedPrintType
-                                  ? `€${
-                                      option[
-                                        selectedPrintType as keyof typeof option
-                                      ]
-                                    }`
-                                  : '€-'}
+                                  ? (option[
+                                      selectedPrintType as
+                                        | 'canvas'
+                                        | 'framed'
+                                        | 'sticker'
+                                    ] as number)
+                                  : option.canvas}
                               </div>
                             </button>
                           ))}
@@ -1049,16 +1153,22 @@ export default function ProductModal({
                         <button
                           onClick={handleAddToCart}
                           disabled={!selectedPrintType || !selectedSize}
-                          className={`w-full py-4 px-6 font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 ${
+                          className={`w-full py-4 px-6 font-bold rounded-xl transition-all duration-200 ${
                             !selectedPrintType || !selectedSize
-                              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                              : 'bg-green-600 text-white hover:bg-green-700'
+                              ? 'bg-blue-50 hover:bg-blue-100 text-blue-600 border-2 border-blue-200 cursor-not-allowed'
+                              : 'bg-green-600 text-white hover:bg-green-700 shadow-lg hover:shadow-xl transform hover:scale-[1.02]'
                           }`}
                         >
                           <span className='flex items-center justify-center gap-2'>
                             <ShoppingCart size={18} />
                             <span>Dodaj u košaricu</span>
-                            <span className='bg-green-800 px-2 py-1 rounded-lg text-sm font-bold'>
+                            <span
+                              className={`px-2 py-1 rounded-lg text-sm font-bold ${
+                                !selectedPrintType || !selectedSize
+                                  ? 'bg-blue-100 text-blue-700'
+                                  : 'bg-green-800 text-white'
+                              }`}
+                            >
                               {selectedPrintType && selectedSize
                                 ? `€${(getCurrentPrice() * quantity).toFixed(
                                     2
@@ -1265,80 +1375,82 @@ export default function ProductModal({
 
         {modalStep === 'thank-you' && (
           <>
-            <div className='flex-1 flex items-center justify-center p-4 md:p-8'>
-              <div className='bg-white rounded-2xl max-w-2xl w-full mx-4 max-h-[95vh] overflow-hidden'>
+            <div className='flex-1 flex items-center justify-center p-4 md:p-6'>
+              <div className='bg-white rounded-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-hidden'>
                 {/* Success Animation */}
-                <div className='p-6 text-center space-y-6 max-h-[85vh] overflow-y-auto'>
-                  <div className='w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto animate-bounce'>
-                    <CheckCircle size={40} className='text-green-600' />
+                <div className='p-4 text-center space-y-4 max-h-[80vh] overflow-y-auto'>
+                  <div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto animate-bounce'>
+                    <CheckCircle size={32} className='text-green-600' />
                   </div>
 
                   {/* Success Message */}
-                  <div className='space-y-4'>
-                    <h2 className='text-2xl lg:text-3xl font-bold text-gray-900'>
+                  <div className='space-y-2'>
+                    <h2 className='text-xl font-bold text-gray-900'>
                       Plaćanje uspješno!
                     </h2>
-                    <p className='text-gray-800 text-base lg:text-lg font-medium'>
+                    <p className='text-gray-800 text-sm font-medium'>
                       Hvala vam na kupovini! Vaša narudžba je uspješno
                       zaprimljena i obrađuje se.
                     </p>
                   </div>
 
                   {/* Order Number */}
-                  <div className='bg-blue-50 rounded-xl p-4 border border-blue-200'>
+                  <div className='bg-blue-50 rounded-lg p-3 border border-blue-200'>
                     <div className='text-center'>
-                      <p className='text-blue-700 text-sm font-semibold mb-2'>
+                      <p className='text-blue-700 text-xs font-semibold mb-1'>
                         BROJ NARUDŽBE
                       </p>
-                      <p className='text-2xl font-mono font-bold text-blue-900 tracking-wider'>
-                        #{new Date().getFullYear()}
-                        {String(new Date().getMonth() + 1).padStart(2, '0')}
-                        {String(new Date().getDate()).padStart(2, '0')}-
-                        {String(Math.floor(Math.random() * 10000)).padStart(
-                          4,
-                          '0'
-                        )}
+                      <p className='text-lg font-mono font-bold text-blue-900 tracking-wider'>
+                        #{completedOrder?.id.slice(-8).toUpperCase() || 'N/A'}
                       </p>
-                      <p className='text-blue-700 text-xs mt-2'>
+                      <p className='text-blue-700 text-xs mt-1'>
                         Sačuvajte ovaj broj za praćenje narudžbe
                       </p>
                     </div>
                   </div>
 
                   {/* Order Summary */}
-                  <div className='bg-gray-50 rounded-xl p-4 lg:p-6 text-left border border-gray-200'>
-                    <h3 className='font-bold text-gray-900 mb-4 text-lg'>
+                  <div className='bg-gray-50 rounded-lg p-3 text-left border border-gray-200'>
+                    <h3 className='font-bold text-gray-900 mb-3 text-base'>
                       Vaša narudžba
                     </h3>
-                    <div className='space-y-3 text-sm lg:text-base'>
+                    <div className='space-y-2 text-sm'>
                       <div className='flex justify-between'>
                         <span className='text-gray-800 font-medium'>
-                          {selectedPrintType === 'canvas'
-                            ? 'Canvas Print'
-                            : selectedPrintType === 'framed'
-                            ? 'Uokvireni Print'
-                            : 'Zidni Sticker'}
+                          {completedOrder?.items &&
+                          completedOrder.items.length > 0
+                            ? completedOrder.items[0].printType === 'canvas'
+                              ? 'Canvas Print'
+                              : completedOrder.items[0].printType === 'framed'
+                              ? 'Uokvireni Print'
+                              : 'Zidni Sticker'
+                            : 'Canvas Print'}
                         </span>
                         <span className='font-semibold text-gray-900'>
-                          {
-                            sizeOptions[
-                              selectedSize as keyof typeof sizeOptions
-                            ].name
-                          }
+                          {completedOrder?.items &&
+                          completedOrder.items.length > 0
+                            ? sizeOptions[
+                                findSizeKey(
+                                  completedOrder.items[0].size
+                                ) as keyof typeof sizeOptions
+                              ]?.name || completedOrder.items[0].size
+                            : 'N/A'}
                         </span>
                       </div>
-                      {selectedPrintType === 'framed' && (
-                        <div className='flex justify-between'>
-                          <span className='text-gray-800 font-medium'>
-                            Boja okvira
-                          </span>
-                          <span className='font-semibold text-gray-900'>
-                            {selectedFrameColor === 'black'
-                              ? 'Crni'
-                              : 'Srebrni'}
-                          </span>
-                        </div>
-                      )}
+                      {completedOrder?.items &&
+                        completedOrder.items.length > 0 &&
+                        completedOrder.items[0].printType === 'framed' && (
+                          <div className='flex justify-between'>
+                            <span className='text-gray-800 font-medium'>
+                              Boja okvira
+                            </span>
+                            <span className='font-semibold text-gray-900'>
+                              {completedOrder.items[0].frameColor === 'black'
+                                ? 'Crni'
+                                : 'Srebrni'}
+                            </span>
+                          </div>
+                        )}
                       <div className='flex justify-between'>
                         <span className='text-gray-800 font-medium'>
                           Način plaćanja
@@ -1349,13 +1461,8 @@ export default function ProductModal({
                       </div>
                       <div className='flex justify-between pt-3 border-t border-gray-300'>
                         <span className='font-bold text-gray-900'>Ukupno</span>
-                        <span className='font-bold text-lg lg:text-xl text-green-600'>
-                          €
-                          {(
-                            getCurrentPrice() *
-                            quantity *
-                            cartItems.length
-                          ).toFixed(2)}
+                        <span className='font-bold text-base text-green-600'>
+                          €{completedOrder?.total.toFixed(2) || '0.00'}
                         </span>
                       </div>
                     </div>
@@ -1400,7 +1507,7 @@ export default function ProductModal({
                   {/* Close Button */}
                   <button
                     onClick={closeModal}
-                    className='w-full bg-blue-600 text-white py-3 lg:py-4 px-8 rounded-xl font-semibold hover:bg-blue-700 transition-colors text-base lg:text-lg'
+                    className='w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors text-sm'
                   >
                     Povratak na početnu
                   </button>
@@ -1626,16 +1733,16 @@ export default function ProductModal({
                           <label className='block text-sm font-semibold text-gray-900 mb-4'>
                             Odaberite način plaćanja *
                           </label>
-                          <div className='space-y-3'>
+                          <div className='grid grid-cols-1 gap-3'>
                             {/* Stripe Credit Card */}
                             <div
-                              className={`relative border-2 rounded-2xl transition-all duration-200 cursor-pointer ${
+                              className={`relative border-2 rounded-xl transition-all duration-200 cursor-pointer ${
                                 orderData.paymentMethod === 'stripe'
-                                  ? 'border-blue-500 bg-blue-50 shadow-md'
-                                  : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-sm'
+                                  ? 'border-blue-500 bg-blue-50'
+                                  : 'border-gray-200 bg-white hover:border-blue-300'
                               }`}
                             >
-                              <label className='flex items-center p-5 cursor-pointer'>
+                              <label className='flex items-center p-4 cursor-pointer'>
                                 <input
                                   type='radio'
                                   name='paymentMethod'
@@ -1650,7 +1757,7 @@ export default function ProductModal({
                                   className='sr-only'
                                 />
                                 <div
-                                  className={`w-5 h-5 border-2 rounded-full mr-4 flex items-center justify-center ${
+                                  className={`w-5 h-5 border-2 rounded-full mr-3 flex items-center justify-center ${
                                     orderData.paymentMethod === 'stripe'
                                       ? 'border-blue-500 bg-blue-500'
                                       : 'border-gray-300'
@@ -1660,61 +1767,32 @@ export default function ProductModal({
                                     <div className='w-2 h-2 bg-white rounded-full' />
                                   )}
                                 </div>
-                                <div className='flex items-center flex-1'>
-                                  <div className='w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-4'>
-                                    <CreditCard
-                                      size={24}
-                                      className='text-white'
-                                    />
-                                  </div>
-                                  <div className='flex-1'>
-                                    <div className='flex items-center gap-2'>
-                                      <span className='font-semibold text-gray-900'>
-                                        Kreditna/debitna kartica
-                                      </span>
-                                      <div className='px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full'>
-                                        Preporučeno
-                                      </div>
-                                    </div>
-                                    <p className='text-sm text-gray-600 mt-1'>
-                                      Siguran i brz Stripe
-                                    </p>
-                                    <div className='flex items-center gap-2 mt-2'>
-                                      <div className='flex gap-1'>
-                                        <div className='w-8 h-5 bg-blue-600 rounded text-white text-xs flex items-center justify-center font-bold'>
-                                          VISA
-                                        </div>
-                                        <div className='w-8 h-5 bg-red-600 rounded text-white text-xs flex items-center justify-center font-bold'>
-                                          MC
-                                        </div>
-                                        <div className='w-8 h-5 bg-blue-800 rounded text-white text-xs flex items-center justify-center font-bold'>
-                                          AX
-                                        </div>
-                                      </div>
-                                      <span className='text-xs text-gray-500'>
-                                        i ostalo
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className='flex items-center gap-1 text-green-600'>
-                                    <Shield size={16} />
-                                    <span className='text-sm font-medium'>
-                                      Sigurno
-                                    </span>
-                                  </div>
+                                <div className='w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center mr-3'>
+                                  <CreditCard
+                                    size={20}
+                                    className='text-white'
+                                  />
+                                </div>
+                                <div className='flex-1'>
+                                  <span className='font-semibold text-gray-900'>
+                                    Kreditna/debitna kartica
+                                  </span>
+                                  <p className='text-sm text-gray-600'>
+                                    Plaćanje karticom online
+                                  </p>
                                 </div>
                               </label>
                             </div>
 
                             {/* Cash on Delivery */}
                             <div
-                              className={`relative border-2 rounded-2xl transition-all duration-200 cursor-pointer ${
+                              className={`relative border-2 rounded-xl transition-all duration-200 cursor-pointer ${
                                 orderData.paymentMethod === 'cod'
-                                  ? 'border-orange-500 bg-orange-50 shadow-md'
-                                  : 'border-gray-200 bg-white hover:border-orange-300 hover:shadow-sm'
+                                  ? 'border-orange-500 bg-orange-50'
+                                  : 'border-gray-200 bg-white hover:border-orange-300'
                               }`}
                             >
-                              <label className='flex items-center p-5 cursor-pointer'>
+                              <label className='flex items-center p-4 cursor-pointer'>
                                 <input
                                   type='radio'
                                   name='paymentMethod'
@@ -1729,7 +1807,7 @@ export default function ProductModal({
                                   className='sr-only'
                                 />
                                 <div
-                                  className={`w-5 h-5 border-2 rounded-full mr-4 flex items-center justify-center ${
+                                  className={`w-5 h-5 border-2 rounded-full mr-3 flex items-center justify-center ${
                                     orderData.paymentMethod === 'cod'
                                       ? 'border-orange-500 bg-orange-500'
                                       : 'border-gray-300'
@@ -1739,42 +1817,29 @@ export default function ProductModal({
                                     <div className='w-2 h-2 bg-white rounded-full' />
                                   )}
                                 </div>
-                                <div className='flex items-center flex-1'>
-                                  <div className='w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mr-4'>
-                                    <Truck size={24} className='text-white' />
-                                  </div>
-                                  <div className='flex-1'>
-                                    <span className='font-semibold text-gray-900'>
-                                      Pouzeće
-                                    </span>
-                                    <p className='text-sm text-gray-600 mt-1'>
-                                      Plaćanje gotovinom pri dostavi
-                                    </p>
-                                    <p className='text-xs text-orange-600 mt-1'>
-                                      + €2.50 manipulativni troškovi
-                                    </p>
-                                  </div>
-                                  <div className='text-right'>
-                                    <div className='text-sm font-medium text-gray-900'>
-                                      2-3 dana
-                                    </div>
-                                    <div className='text-xs text-gray-500'>
-                                      dostava
-                                    </div>
-                                  </div>
+                                <div className='w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center mr-3'>
+                                  <Truck size={20} className='text-white' />
+                                </div>
+                                <div className='flex-1'>
+                                  <span className='font-semibold text-gray-900'>
+                                    Pouzeće
+                                  </span>
+                                  <p className='text-sm text-gray-600'>
+                                    Plaćanje gotovinom pri dostavi
+                                  </p>
                                 </div>
                               </label>
                             </div>
 
                             {/* Bank Transfer */}
                             <div
-                              className={`relative border-2 rounded-2xl transition-all duration-200 cursor-pointer ${
+                              className={`relative border-2 rounded-xl transition-all duration-200 cursor-pointer ${
                                 orderData.paymentMethod === 'bank'
-                                  ? 'border-green-500 bg-green-50 shadow-md'
-                                  : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-sm'
+                                  ? 'border-green-500 bg-green-50'
+                                  : 'border-gray-200 bg-white hover:border-green-300'
                               }`}
                             >
-                              <label className='flex items-center p-5 cursor-pointer'>
+                              <label className='flex items-center p-4 cursor-pointer'>
                                 <input
                                   type='radio'
                                   name='paymentMethod'
@@ -1789,7 +1854,7 @@ export default function ProductModal({
                                   className='sr-only'
                                 />
                                 <div
-                                  className={`w-5 h-5 border-2 rounded-full mr-4 flex items-center justify-center ${
+                                  className={`w-5 h-5 border-2 rounded-full mr-3 flex items-center justify-center ${
                                     orderData.paymentMethod === 'bank'
                                       ? 'border-green-500 bg-green-500'
                                       : 'border-gray-300'
@@ -1799,34 +1864,47 @@ export default function ProductModal({
                                     <div className='w-2 h-2 bg-white rounded-full' />
                                   )}
                                 </div>
-                                <div className='flex items-center flex-1'>
-                                  <div className='w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mr-4'>
-                                    <Building
-                                      size={24}
-                                      className='text-white'
-                                    />
-                                  </div>
-                                  <div className='flex-1'>
-                                    <span className='font-semibold text-gray-900'>
-                                      Bankovni transfer
-                                    </span>
-                                    <p className='text-sm text-gray-600 mt-1'>
-                                      Direktan transfer na račun
-                                    </p>
-                                    <p className='text-xs text-green-600 mt-1'>
-                                      Bez dodatnih troškova
-                                    </p>
-                                  </div>
-                                  <div className='text-right'>
-                                    <div className='text-sm font-medium text-gray-900'>
-                                      1-2 dana
-                                    </div>
-                                    <div className='text-xs text-gray-500'>
-                                      obradi
-                                    </div>
-                                  </div>
+                                <div className='w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center mr-3'>
+                                  <Building size={20} className='text-white' />
+                                </div>
+                                <div className='flex-1'>
+                                  <span className='font-semibold text-gray-900'>
+                                    Bankovni transfer
+                                  </span>
+                                  <p className='text-sm text-gray-600'>
+                                    Prijenos na račun tvrtke
+                                  </p>
                                 </div>
                               </label>
+                            </div>
+                          </div>
+
+                          {/* Promo Code Input */}
+                          <div className='mt-6'>
+                            <label className='block text-sm font-semibold text-gray-900 mb-2'>
+                              Promo kod (neobavezno)
+                            </label>
+                            <div className='flex gap-3'>
+                              <div className='flex-1'>
+                                <input
+                                  type='text'
+                                  value={orderData.promoCode || ''}
+                                  onChange={(e) =>
+                                    setOrderData({
+                                      ...orderData,
+                                      promoCode: e.target.value,
+                                    })
+                                  }
+                                  className='w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm hover:shadow-md transition-all duration-200 text-gray-900 placeholder-gray-500'
+                                  placeholder='Unesite promo kod'
+                                />
+                              </div>
+                              <button
+                                type='button'
+                                className='px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors'
+                              >
+                                Provjeri
+                              </button>
                             </div>
                           </div>
 
@@ -2128,7 +2206,8 @@ export default function ProductModal({
                       !orderData.address ||
                       !orderData.city ||
                       !orderData.postalCode ||
-                      !orderData.paymentMethod
+                      !orderData.paymentMethod ||
+                      cartItems.length === 0
                     }
                     className='flex-1 lg:flex-initial px-6 py-4 lg:py-2 lg:px-4 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed touch-manipulation lg:whitespace-nowrap'
                   >
@@ -2149,7 +2228,15 @@ export default function ProductModal({
                         : orderData.paymentMethod === 'bank'
                         ? 'Potvrdi narudžbu'
                         : 'Završi narudžbu'}{' '}
-                      • €{getCurrentPrice()}
+                      • €
+                      {cartItems.length > 0
+                        ? (
+                            cartItems.reduce(
+                              (sum, item) => sum + item.price * item.quantity,
+                              0
+                            ) * 1.25
+                          ).toFixed(2)
+                        : '0.00'}
                     </span>
                   </button>
                 </div>

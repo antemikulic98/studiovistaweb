@@ -9,9 +9,11 @@ export async function GET(request: NextRequest) {
     console.log('=== DOWNLOAD DEBUG ===');
     console.log('Download request for URL:', imageUrl);
     console.log('Filename:', filename);
+    console.log('Full request URL:', request.url);
 
     if (!imageUrl || typeof imageUrl !== 'string') {
       console.error('No valid image URL provided');
+      console.error('❌ RETURNING JSON ERROR: No URL provided');
       return NextResponse.json(
         { success: false, error: 'URL slike je obavezan' },
         { status: 400 }
@@ -19,10 +21,26 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('URL starts with data:', imageUrl.startsWith('data:'));
+    console.log('URL starts with blob:', imageUrl.startsWith('blob:'));
     console.log(
       'URL includes digitaloceanspaces:',
       imageUrl.includes('.digitaloceanspaces.com')
     );
+
+    // Handle blob URLs - these can't be processed server-side
+    if (imageUrl.startsWith('blob:')) {
+      console.log('⚠️ Blob URL detected - cannot download server-side');
+      console.error('❌ RETURNING JSON ERROR: Blob URLs not supported');
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Blob URL-ovi se ne mogu preuzeti server-side - koristi client-side download',
+          isBlob: true,
+        },
+        { status: 400 }
+      );
+    }
 
     let imageBuffer: ArrayBuffer | undefined;
     let contentType = 'image/jpeg';
@@ -126,6 +144,7 @@ export async function GET(request: NextRequest) {
         'Invalid image URL - not base64 or DigitalOcean Spaces:',
         imageUrl
       );
+      console.error('❌ RETURNING JSON ERROR: Invalid URL type');
       return NextResponse.json(
         {
           success: false,

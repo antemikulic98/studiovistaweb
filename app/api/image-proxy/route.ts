@@ -5,9 +5,25 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const imageUrl = searchParams.get('url');
 
+    console.log('🖼️ Image-proxy request for URL:', imageUrl);
+
     if (!imageUrl) {
       return NextResponse.json(
         { success: false, error: 'URL slike je obavezan' },
+        { status: 400 }
+      );
+    }
+
+    // Handle blob URLs - these can't be proxied server-side
+    if (imageUrl.startsWith('blob:')) {
+      console.log('⚠️ Blob URL detected - cannot proxy server-side');
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Blob URL-ovi se ne mogu prikazati preko proxy-ja - koristi direktni pristup',
+          isBlob: true,
+        },
         { status: 400 }
       );
     }

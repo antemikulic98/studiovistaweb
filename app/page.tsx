@@ -8,11 +8,21 @@ import confetti from 'canvas-confetti';
 declare global {
   interface Window {
     selectedImageFile?: File;
+    stripeCartFiles?: Array<{
+      id: string;
+      file: File;
+      printType: 'canvas' | 'framed' | 'sticker';
+      size: string;
+      frameColor: 'black' | 'silver';
+      quantity: number;
+      price: number;
+    }>;
   }
 }
 import Header from '../components/Header';
 import Hero from '../components/Hero';
 import ProductModal from '../components/ProductModal';
+import TrackingModal from '../components/TrackingModal';
 import Products from '../components/Products';
 import WhyChooseUs from '../components/WhyChooseUs';
 import HowItWorks from '../components/HowItWorks';
@@ -25,6 +35,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const [language, setLanguage] = useState<'hr' | 'en'>('hr');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   // Cart system - each item has its own configuration
   interface CartItem {
     id: string;
@@ -35,6 +46,19 @@ function HomeContent() {
     frameColor: 'black' | 'silver';
     quantity: number;
     price: number;
+  }
+
+  interface OrderData {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    postalCode: string;
+    paymentMethod: 'stripe' | 'cod' | 'bank';
+    specialInstructions?: string;
+    promoCode?: string;
   }
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -55,8 +79,13 @@ function HomeContent() {
   const [modalStep, setModalStep] = useState<
     'customize' | 'order' | 'thank-you'
   >('customize');
+  const [completedOrder, setCompletedOrder] = useState<{
+    id: string;
+    total: number;
+    items: typeof cartItems;
+  } | null>(null);
   // Payment success handling will show modal in thank-you step
-  const [orderData, setOrderData] = useState({
+  const [orderData, setOrderData] = useState<OrderData>({
     firstName: '',
     lastName: '',
     email: '',
@@ -64,7 +93,8 @@ function HomeContent() {
     address: '',
     city: '',
     postalCode: '',
-    paymentMethod: 'stripe' as 'stripe' | 'cod' | 'bank',
+    paymentMethod: 'stripe',
+    promoCode: '',
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const t = translations[language];
@@ -114,6 +144,13 @@ function HomeContent() {
     const sessionId = searchParams.get('session_id');
 
     if (paymentSuccess === 'true' && sessionId) {
+      // Check if we've already processed this session to avoid duplicate uploads
+      const processedSession = localStorage.getItem('processedStripeSession');
+      if (processedSession === sessionId) {
+        console.log('✅ Session already processed, skipping:', sessionId);
+        return;
+      }
+
       // Create order from stored data
       const createStripeOrder = async () => {
         try {
@@ -123,15 +160,122 @@ function HomeContent() {
             return;
           }
 
+          console.log('💳 Stripe payment success - uploading images now...');
+          console.log('🛒 Cart items to upload:', cartItems.length);
+          console.log('🛒 Cart items details:', cartItems);
+
+          // Use cartItems if available, otherwise try to recover from window.stripeCartFiles
+          let itemsToProcess = cartItems;
+
+          if (cartItems.length === 0) {
+            console.warn(
+              '⚠️ No cart items found for Stripe order! Cart may have been cleared.'
+            );
+            console.warn('🔍 Checking localStorage backup...');
+
+            const storedCartFiles = localStorage.getItem('stripeCartFiles');
+            if (storedCartFiles) {
+              console.log('💾 Found cart files in localStorage, recovering...');
+              const cartFilesBackup = JSON.parse(storedCartFiles);
+
+              // Convert base64 data back to File objects
+              itemsToProcess = cartFilesBackup.map(
+                (item: {
+                  id: string;
+                  fileName: string;
+                  fileType: string;
+                  fileSize: number;
+                  base64Data: string;
+                  printType: 'canvas' | 'framed' | 'sticker';
+                  size: string;
+                  frameColor: 'black' | 'silver';
+                  quantity: number;
+                  price: number;
+                }) => {
+                  // Convert base64 to blob, then to File
+                  const byteString = atob(item.base64Data.split(',')[1]);
+                  const mimeString = item.base64Data
+                    .split(',')[0]
+                    .split(':')[1]
+                    .split(';')[0];
+                  const arrayBuffer = new ArrayBuffer(byteString.length);
+                  const uint8Array = new Uint8Array(arrayBuffer);
+
+                  for (let i = 0; i < byteString.length; i++) {
+                    uint8Array[i] = byteString.charCodeAt(i);
+                  }
+
+                  const blob = new Blob([arrayBuffer], { type: mimeString });
+                  const file = new File([blob], item.fileName, {
+                    type: item.fileType,
+                  });
+
+                  return {
+                    id: item.id,
+                    imageFile: file,
+                    previewUrl: item.base64Data, // Use base64 as preview URL temporarily
+                    printType: item.printType,
+                    size: item.size,
+                    frameColor: item.frameColor,
+                    quantity: item.quantity,
+                    price: item.price,
+                  };
+                }
+              );
+              console.log(
+                '🔄 Recovered cart items from localStorage:',
+                itemsToProcess.length
+              );
+            } else {
+              console.error('❌ No cart files backup found in localStorage');
+            }
+          }
+
+          console.log('📦 Final items to process:', itemsToProcess.length);
+
+          // Upload each unique image file once and map to cart items
+          const uploadedImages = new Map<File, string>();
+          const updatedCartItems = [];
+
+          for (const cartItem of itemsToProcess) {
+            let imageUrl: string;
+
+            // Check if we already uploaded this file
+            if (uploadedImages.has(cartItem.imageFile)) {
+              imageUrl = uploadedImages.get(cartItem.imageFile)!;
+              console.log('📷 Reusing uploaded image:', imageUrl);
+            } else {
+              console.log('📤 Uploading image for cart item:', cartItem.id);
+              // Upload to DigitalOcean Spaces
+              imageUrl = await uploadImageFile(cartItem.imageFile);
+              uploadedImages.set(cartItem.imageFile, imageUrl);
+              console.log('✅ Image uploaded:', imageUrl);
+            }
+
+            updatedCartItems.push({
+              ...cartItem,
+              imageUrl: imageUrl, // Replace blob URL with DigitalOcean URL
+            });
+          }
+
           const orderData = JSON.parse(pendingOrderData);
-          console.log('💾 Creating Stripe order:', orderData);
+          console.log('💾 Creating Stripe order with uploaded images');
+
+          // Update printData with real imageUrls
+          const updatedOrderData = {
+            ...orderData,
+            printData: {
+              ...orderData.printData,
+              imageUrls: updatedCartItems.map((item) => item.imageUrl),
+            },
+          };
 
           // Create order in database
           const response = await fetch('/api/orders', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              ...orderData,
+              ...updatedOrderData,
               timestamp: new Date(),
               status: 'paid', // Mark as paid since Stripe payment successful
               stripeSessionId: sessionId, // Store Stripe session ID
@@ -150,8 +294,32 @@ function HomeContent() {
 
           console.log('✅ Stripe order created successfully:', result);
 
-          // Clean up localStorage
+          // Save completed order info for thank-you display
+          console.log('🎯 Pre setCompletedOrder - cartItems:', cartItems);
+          const stripeOrderData = JSON.parse(pendingOrderData);
+          const total = stripeOrderData.printData.totalPrice || 0;
+          setCompletedOrder({
+            id: result.data._id, // MongoDB order ID
+            total: total,
+            items:
+              updatedCartItems.length > 0 ? updatedCartItems : itemsToProcess, // Use updated items with real URLs
+          });
+          console.log('🎯 After setCompletedOrder:', {
+            id: result.data._id,
+            total: total,
+            items:
+              updatedCartItems.length > 0 ? updatedCartItems : itemsToProcess,
+          });
+
+          // Mark session as processed and clean up localStorage
+          localStorage.setItem('processedStripeSession', sessionId);
           localStorage.removeItem('pendingStripeOrder');
+          localStorage.removeItem('cartBackup');
+          localStorage.removeItem('stripeCartFiles');
+
+          // Show success modal
+          setModalStep('thank-you');
+          setIsModalOpen(true);
 
           // Trigger confetti celebration
           confetti({
@@ -165,7 +333,10 @@ function HomeContent() {
           setModalStep('thank-you');
         } catch (error) {
           console.error('Error creating Stripe order:', error);
-          alert('Greška pri kreiranje narudžbe. Molimo kontaktirajte podršku.');
+          console.error('💥 Full error details:', error);
+          alert(
+            'Greška pri kreiranje narudžbe ili upload slika. Molimo kontaktirajte podršku.'
+          );
         }
       };
 
@@ -179,10 +350,12 @@ function HomeContent() {
     if (paymentCanceled === 'true') {
       // Clean up localStorage on cancel
       localStorage.removeItem('pendingStripeOrder');
+      localStorage.removeItem('cartBackup');
+      localStorage.removeItem('stripeCartFiles');
       alert('Plaćanje je otkazano. Možete pokušati ponovno.');
       window.history.replaceState({}, '', '/');
     }
-  }, [searchParams]);
+  }, [searchParams, cartItems]); // Include cartItems to run upload when cart is available
 
   const getCurrentPrice = () => {
     if (!selectedSize || !selectedPrintType) return 0;
@@ -260,6 +433,14 @@ function HomeContent() {
     setIsModalOpen(true);
   };
 
+  const openTrackingModal = () => {
+    setIsTrackingModalOpen(true);
+  };
+
+  const closeTrackingModal = () => {
+    setIsTrackingModalOpen(false);
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
     setCartItems([]);
@@ -269,6 +450,7 @@ function HomeContent() {
     setSelectedSize('30x20'); // Reset to default size
     setSelectedFrameColor('black'); // Reset to default frame color
     setModalStep('customize'); // Reset to first step
+    setCompletedOrder(null); // Reset completed order
     // Order state will be reset
     setOrderData({
       firstName: '',
@@ -278,7 +460,8 @@ function HomeContent() {
       address: '',
       city: '',
       postalCode: '',
-      paymentMethod: 'stripe' as 'stripe' | 'cod' | 'bank',
+      paymentMethod: 'stripe',
+      promoCode: '',
     });
 
     // Clear file input and temp file storage
@@ -291,6 +474,8 @@ function HomeContent() {
 
   const handleAddToCart = () => {
     if (!currentImage || !selectedPrintType || !selectedSize) return;
+
+    // Debug removed for cleaner logs
 
     const cartItem: CartItem = {
       id: `${Date.now()}-${Math.random()}`,
@@ -337,6 +522,32 @@ function HomeContent() {
 
   const handleBackToCustomize = () => {
     setModalStep('customize');
+  };
+
+  // Upload image file to DigitalOcean Spaces
+  const uploadImageFile = async (file: File): Promise<string> => {
+    console.log('📤 Starting upload for file:', file.name);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Upload failed: ${error}`);
+    }
+
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Upload failed');
+    }
+
+    console.log('✅ Upload successful:', result.imageUrl);
+    return result.imageUrl;
   };
 
   const handleCompleteOrder = async () => {
@@ -481,6 +692,25 @@ function HomeContent() {
 
       console.log('✅ Order saved successfully:', result);
 
+      // Save completed order info for thank-you display
+      console.log(
+        '🎯 COD/Bank - Pre setCompletedOrder - cartItems:',
+        cartItems
+      );
+      const total =
+        cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0) *
+        1.25;
+      setCompletedOrder({
+        id: result.data._id, // MongoDB order ID
+        total: total,
+        items: [...cartItems], // Save current cart items
+      });
+      console.log('🎯 COD/Bank - After setCompletedOrder:', {
+        id: result.data._id,
+        total: total,
+        items: [...cartItems],
+      });
+
       // Show thank you screen
       setModalStep('thank-you');
 
@@ -527,7 +757,11 @@ function HomeContent() {
         openModal={openModal}
       />
 
-      <Hero translations={t} openModal={openModal} />
+      <Hero
+        translations={t}
+        openModal={openModal}
+        openTrackingModal={openTrackingModal}
+      />
 
       <Products t={t} openModal={openModal} sizeOptions={sizeOptions} />
 
@@ -570,6 +804,14 @@ function HomeContent() {
         getCurrentDimensions={getCurrentDimensions}
         fileInputRef={fileInputRef}
         sizeOptions={sizeOptions}
+        completedOrder={completedOrder}
+      />
+
+      {/* Tracking Modal */}
+      <TrackingModal
+        isOpen={isTrackingModalOpen}
+        onClose={closeTrackingModal}
+        translations={t}
       />
     </div>
   );

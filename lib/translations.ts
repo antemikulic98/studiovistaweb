@@ -14,7 +14,7 @@ const translations = {
       description:
         'Profesionalni printovi na platnu i okviri po mjeri koji pretvaraju vaše najdraže uspomene u muzejsku kvalitetu zidne umjetnosti.',
       createButton: 'Stvori print',
-      galleryButton: 'Istraži proizvode',
+      galleryButton: 'Prati narudžbu',
       stats: {
         customers: 'Zadovoljni kupci',
         rating: 'Ocjena',
@@ -218,6 +218,30 @@ const translations = {
         supportAvailable: 'Podrška dostupna',
       },
     },
+    tracking: {
+      title: 'Praćenje narudžbe',
+      subtitle: 'Unesite broj narudžbe za praćenje statusa',
+      orderNumber: 'Broj narudžbe',
+      orderNumberPlaceholder: 'Npr. ABC12345',
+      trackButton: 'Prati narudžbu',
+      tracking: 'Praćenje...',
+      close: 'Zatvori',
+      notFound: 'Narudžba nije pronađena',
+      notFoundDesc: 'Molimo provjerite broj narudžbe i pokušajte ponovno.',
+      status: {
+        pending: 'Čeka obradu',
+        paid: 'Plaćeno',
+        processing: 'U obradi',
+        shipped: 'Poslano',
+        delivered: 'Dostavljeno',
+      },
+      details: {
+        orderDate: 'Datum narudžbe',
+        status: 'Status',
+        total: 'Ukupno',
+        items: 'Stavke',
+      },
+    },
     footer: {
       tagline:
         'Stvaramo premium canvas printove i okvire po mjeri koji pretvaraju vaše uspomene u vrhunsnu zidnu umjetnost.',
@@ -278,7 +302,7 @@ const translations = {
       description:
         'Professional canvas prints and custom framing that turn your cherished memories into museum-quality wall art.',
       createButton: 'Create Your Print',
-      galleryButton: 'View Gallery',
+      galleryButton: 'Track Order',
       stats: {
         customers: 'Happy Customers',
         rating: 'Rating',
@@ -479,6 +503,30 @@ const translations = {
           success: 'Message sent successfully!',
           error: 'Error sending message. Please try again.',
         },
+      },
+    },
+    tracking: {
+      title: 'Order Tracking',
+      subtitle: 'Enter your order number to track status',
+      orderNumber: 'Order Number',
+      orderNumberPlaceholder: 'e.g. ABC12345',
+      trackButton: 'Track Order',
+      tracking: 'Tracking...',
+      close: 'Close',
+      notFound: 'Order not found',
+      notFoundDesc: 'Please check your order number and try again.',
+      status: {
+        pending: 'Pending',
+        paid: 'Paid',
+        processing: 'Processing',
+        shipped: 'Shipped',
+        delivered: 'Delivered',
+      },
+      details: {
+        orderDate: 'Order Date',
+        status: 'Status',
+        total: 'Total',
+        items: 'Items',
       },
     },
     footer: {

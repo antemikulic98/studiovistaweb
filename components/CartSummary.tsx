@@ -119,24 +119,57 @@ export default function CartSummary({
         </div>
       </div>
 
-      {/* Delivery Information */}
-      <div className='bg-blue-50 rounded-lg p-4 space-y-2 mt-4'>
-        <h5 className='font-semibold text-gray-900 mb-3'>
+      {/* Delivery Information - Professional Design */}
+      <div className='mt-6 pt-4 border-t border-gray-100'>
+        <h5 className='font-semibold text-gray-900 mb-4'>
           Informacije o dostavi
         </h5>
-        <div className='space-y-2 text-sm text-gray-700'>
-          <p className='flex items-center gap-2'>
-            <Truck size={14} className='text-blue-600' />
-            Dostava 3-7 radnih dana
-          </p>
-          <p className='flex items-center gap-2'>
-            <Shield size={14} className='text-green-600' />
-            100% zadovoljstvo ili povrat novca
-          </p>
-          <p className='flex items-center gap-2'>
-            <Award size={14} className='text-purple-600' />
-            Premium kvaliteta materijala
-          </p>
+        <div className='space-y-3'>
+          <div className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg'>
+            <div className='w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center'>
+              <Truck size={16} className='text-white' />
+            </div>
+            <div className='flex-1'>
+              <div className='flex justify-between items-center'>
+                <span className='text-sm font-medium text-gray-900'>
+                  Brza dostava
+                </span>
+                <span className='text-sm text-gray-600 font-medium'>
+                  3-7 dana
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg'>
+            <div className='w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center'>
+              <Shield size={16} className='text-white' />
+            </div>
+            <div className='flex-1'>
+              <div className='flex justify-between items-center'>
+                <span className='text-sm font-medium text-gray-900'>
+                  Garancija zadovoljstva
+                </span>
+                <span className='text-sm text-gray-600 font-medium'>100%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className='flex items-center gap-3 p-3 bg-gray-50 rounded-lg'>
+            <div className='w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center'>
+              <Award size={16} className='text-white' />
+            </div>
+            <div className='flex-1'>
+              <div className='flex justify-between items-center'>
+                <span className='text-sm font-medium text-gray-900'>
+                  Premium kvaliteta
+                </span>
+                <span className='text-sm text-gray-600 font-medium'>
+                  5 zvjezdica
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

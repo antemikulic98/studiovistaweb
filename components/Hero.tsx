@@ -1,15 +1,20 @@
 'use client';
 
 import Image from 'next/image';
-import { Sparkles, Palette, ChevronRight, Eye, Truck } from 'lucide-react';
+import { Sparkles, Palette, ChevronRight, Package, Truck } from 'lucide-react';
 import { Translations } from '../types/translations';
 
 interface HeroProps {
   translations: Translations;
   openModal: () => void;
+  openTrackingModal: () => void;
 }
 
-export default function Hero({ translations: t, openModal }: HeroProps) {
+export default function Hero({
+  translations: t,
+  openModal,
+  openTrackingModal,
+}: HeroProps) {
   return (
     <section className='relative min-h-screen flex items-center justify-center bg-gray-50 pt-20'>
       {/* Background Pattern */}
@@ -53,8 +58,11 @@ export default function Hero({ translations: t, openModal }: HeroProps) {
                   className='group-hover:translate-x-1 transition-transform duration-200'
                 />
               </button>
-              <button className='border-2 border-gray-300 hover:border-gray-900 text-gray-900 px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:bg-gray-900 hover:text-white flex items-center justify-center gap-2'>
-                <Eye size={20} />
+              <button
+                onClick={openTrackingModal}
+                className='border-2 border-gray-300 hover:border-gray-900 text-gray-900 px-8 py-4 rounded-2xl font-semibold text-lg transition-all duration-300 hover:bg-gray-900 hover:text-white flex items-center justify-center gap-2'
+              >
+                <Package size={20} />
                 {t.hero.galleryButton}
               </button>
             </div>

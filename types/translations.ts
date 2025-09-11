@@ -188,6 +188,30 @@ export interface Translations {
       supportAvailable: string;
     };
   };
+  tracking: {
+    title: string;
+    subtitle: string;
+    orderNumber: string;
+    orderNumberPlaceholder: string;
+    trackButton: string;
+    tracking: string;
+    close: string;
+    notFound: string;
+    notFoundDesc: string;
+    status: {
+      pending: string;
+      paid: string;
+      processing: string;
+      shipped: string;
+      delivered: string;
+    };
+    details: {
+      orderDate: string;
+      status: string;
+      total: string;
+      items: string;
+    };
+  };
   footer: {
     tagline: string;
     products: {
